@@ -1,1 +1,1 @@
-# OmniAi
+# SwitchAI
