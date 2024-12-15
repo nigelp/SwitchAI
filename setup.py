@@ -1,9 +1,9 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='SwitchAI',
-    version='0.0.0',
-    description='',
+    name='switchai',
+    version='0.1.1',
+    description='A unified library for interacting with various AI APIs through a standardized interface.',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
     author='Yassine El Boudouri',
