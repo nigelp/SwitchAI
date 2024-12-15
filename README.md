@@ -26,6 +26,10 @@ response = client.chat(
 )
 ```  
 
+## Documentation  
+
+For full documentation, visit [SwitchAI Documentation](https://switchai.readthedocs.io/).  
+
 ## Contributing  
 
 Contributions are always welcome! If you'd like to help enhance SwitchAI, feel free to make a contribution.
