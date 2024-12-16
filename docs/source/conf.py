@@ -12,6 +12,7 @@ html_title = "SwitchAI Docs"
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
+    'sphinx.ext.viewcode',
     # Adds a convenient copy button to code blocks.
     "sphinx_copybutton",
     # Automagically adds Open Graph meta tags.
