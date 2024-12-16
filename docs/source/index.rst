@@ -18,3 +18,14 @@ Here’s a simple example of how to use SwitchAI:
             {"role": "user", "content": "Hello, how are you?"}
         ]
     )
+
+.. toctree::
+    :maxdepth: 2
+    :hidden:
+
+    models
+    api_keys
+    chat
+    function_calling
+    embeddings
+    classes
