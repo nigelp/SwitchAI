@@ -14,6 +14,7 @@ from ._response import (
     GoogleEmbeddingResponseAdapter,
     MistralEmbeddingResponseAdapter,
     ChatChoice,
+    EmbeddingResponse,
 )
 
 
@@ -56,6 +57,14 @@ API_KEYS_NAMING = {
 
 
 class SwitchAI:
+    """
+    The SwitchAI client class.
+
+    Args:
+            model_name (str): The name of the model to use.
+            api_key (str, optional): The API key to use, if not set it will be read from the environment variable. Defaults to None.
+    """
+
     def __init__(self, model_name: str, api_key: str | None = None):
         self.model_name = model_name
         self.provider_name = self.get_provider_name(model_name)
@@ -98,7 +107,7 @@ class SwitchAI:
             # Delay the client creation until the chat method is called because a system prompt can't be set after the client is created
 
     def chat(
-        self, messages, temperature: float = 1.0, max_tokens: int | None = None, n: int = 1, tools: List = None
+            self, messages, temperature: float = 1.0, max_tokens: int | None = None, n: int = 1, tools: List = None
     ) -> ChatResponse:
         """
         Sends a chat request to the AI model and returns the response.
@@ -278,7 +287,16 @@ class SwitchAI:
 
             return GoogleChatResponseAdapter(response)
 
-    def embed(self, input: Union[str, List[str]]):
+    def embed(self, input: Union[str, List[str]]) -> EmbeddingResponse:
+        """
+        Embeds the input text using the AI model.
+
+        Args:
+            input (Union[str, List[str]]): The input text to embed.
+
+        Returns:
+            EmbeddingResponse: The response from the model.
+        """
         if self.model_category != "embed":
             raise ValueError(f"Model '{self.model_name}' is not an embedding model.")
 
