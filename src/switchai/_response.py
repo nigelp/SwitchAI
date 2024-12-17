@@ -1,51 +1,44 @@
-from dataclasses import dataclass
-from typing import List
+import json
+from typing import List, Optional, Dict
+
+from pydantic import BaseModel
 
 
-@dataclass
-class Function:
+class Function(BaseModel):
     name: str
-    arguments: dict
+    arguments: Dict[str, str]
 
 
-@dataclass
-class ChatMessage:
+class ChatMessage(BaseModel):
     role: str
-    content: str
+    content: Optional[str] = None
 
 
-@dataclass
-class ChatToolCall:
-    id: str | None
+class ChatToolCall(BaseModel):
+    id: Optional[str] = None
     function: Function
     type: str = "function"
 
 
-@dataclass
-class ChatChoice:
+class ChatChoice(BaseModel):
     index: int
     message: ChatMessage
     finish_reason: str
-    tool_calls: List[ChatToolCall] = None
+    tool_calls: Optional[List[ChatToolCall]] = None
 
 
-@dataclass
-class ChatUsage:
+class ChatUsage(BaseModel):
     input_tokens: int
     output_tokens: int
     total_tokens: int
 
 
-@dataclass
-class ChatResponse:
-    id: str
-    object: str
-    model: str
+class ChatResponse(BaseModel):
+    id: Optional[str] = None
+    object: Optional[str] = None
+    model: Optional[str] = None
     usage: ChatUsage
     choices: List[ChatChoice]
-
-    def __repr__(self):
-        return f"ChatResponse(id={self.id}, object={self.object}, model={self.model}, usage={self.usage}, choices={self.choices})"
 
 
 class OpenAIChatResponseAdapter(ChatResponse):
@@ -65,7 +58,8 @@ class OpenAIChatResponseAdapter(ChatResponse):
                     message=ChatMessage(role=choice.message.role, content=choice.message.content),
                     tool_calls=[
                         ChatToolCall(
-                            id=tool.id, function=Function(name=tool.function.name, arguments=tool.function.arguments)
+                            id=tool.id,
+                            function=Function(name=tool.function.name, arguments=json.loads(tool.function.arguments)),
                         )
                         for tool in choice.message.tool_calls
                     ]
@@ -95,7 +89,8 @@ class MistralChatResponseAdapter(ChatResponse):
                     message=ChatMessage(role=choice.message.role, content=choice.message.content),
                     tool_calls=[
                         ChatToolCall(
-                            id=tool.id, function=Function(name=tool.function.name, arguments=tool.function.arguments)
+                            id=tool.id,
+                            function=Function(name=tool.function.name, arguments=json.loads(tool.function.arguments)),
                         )
                         for tool in choice.message.tool_calls
                     ]
@@ -167,28 +162,22 @@ class GoogleChatResponseAdapter(ChatResponse):
         )
 
 
-@dataclass
-class Embedding:
+class Embedding(BaseModel):
     index: int
     data: List[float]
 
 
-@dataclass
-class EmbeddingUsage:
-    input_tokens: int | None
-    total_tokens: int | None
+class EmbeddingUsage(BaseModel):
+    input_tokens: Optional[int] = None
+    total_tokens: Optional[int] = None
 
 
-@dataclass
-class EmbeddingResponse:
-    id: str
-    object: str
-    model: str
+class EmbeddingResponse(BaseModel):
+    id: Optional[str] = None
+    object: Optional[str] = None
+    model: Optional[str] = None
     usage: EmbeddingUsage
     embeddings: List[Embedding]
-
-    def __repr__(self):
-        return f"EmbeddingResponse(id={self.id}, object={self.object}, model={self.model}, usage={self.usage}, embeddings={self.embeddings})"
 
 
 class OpenAIEmbeddingResponseAdapter(EmbeddingResponse):
