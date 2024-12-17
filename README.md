@@ -7,24 +7,54 @@ SwitchAI is a lightweight and flexible library that provides a standardized inte
 Install with pip:  
 ```bash  
 pip install switchai  
-```  
+```
 
 ## Getting Started  
 
-Here’s an example of how to use SwitchAI:  
-```python  
-from switchai import SwitchAI  
+To use SwitchAI, you will need API keys for the AI providers you intend to interact with. You can set these keys either as environment variables or pass them as configuration to the `SwitchAI` client.  
 
-# Initialize the client with your chosen AI model or provider  
-client = SwitchAI("gpt-4o")  
+If you choose to use environment variables, ensure you follow the naming conventions for each provider as outlined in the [documentation](https://switchai.readthedocs.io/en/latest/api_keys.html).
 
-# Send a chat message to the AI  
-response = client.chat(  
-    messages=[  
-        {"role": "user", "content": "Hello, how are you?"}  
-    ]  
+### Example Usage  
+
+#### Chat Example  
+
+```python
+from switchai import SwitchAI
+
+# Initialize the client with the desired AI model
+client = SwitchAI("gpt-4o")
+
+# Send a message and receive a response
+response = client.chat(
+    messages=[
+        {"role": "user", "content": "Hello, how are you?"}
+    ]
 )
-```  
+
+# Print the response
+print(response)
+```
+
+#### Text Embedding Example  
+
+```python
+from switchai import SwitchAI
+
+# Initialize the client with the chosen embedding model
+client = SwitchAI("models/text-embedding-004")
+
+# Generate embeddings for a list of text inputs
+response = client.embed(
+    input=[
+        "I am feeling great today!",
+        "I am feeling sad today."
+    ]
+)
+
+# Print the response
+print(response)
+```
 
 ## Documentation  
 
