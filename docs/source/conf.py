@@ -18,3 +18,6 @@ extensions = [
     # Automagically adds Open Graph meta tags.
     "sphinxext.opengraph"
 ]
+
+# Show only class names.
+add_module_names = False
