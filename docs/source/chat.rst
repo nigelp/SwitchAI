@@ -13,7 +13,7 @@ Here's an example of how to use it:
 
     from switchai import SwitchAI
 
-    client = SwitchAI("gpt-4")
+    client = SwitchAI(provider="openai", model_name="gpt-4")
     response = client.chat(
         messages=[
             {"role": "system", "content": "You are a friendly assistant."},

@@ -23,7 +23,7 @@ string or a list of strings as input and returns an
 
    from switchai import SwitchAI
 
-   client = SwitchAI("text-embedding-ada-002")
+   client = SwitchAI(provider="google", model_name="text-embedding-ada-002")
    response = client.embed(
        input=[
            "I took my dog to the vet",

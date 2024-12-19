@@ -11,7 +11,7 @@ You can pass your API key directly when initializing the SwitchAI client, as sho
 
     from switchai import SwitchAI
 
-    client = SwitchAI("gpt-4", api_key="your_api_key")
+    client = SwitchAI(provider="openai", model_name="gpt-4", api_key="your_api_key")
     response = client.chat(
         messages=[
             {"role": "user", "content": "Hello, how are you?"}
@@ -39,3 +39,4 @@ Replace PROVIDER_API_KEY_NAMING with the following naming convention for the pro
     "**xAI**", XAI_API_KEY
     "**Anthropic**", ANTHROPIC_API_KEY
     "**Google**", GEMINI_API_KEY
+    "**Deepgram**", DEEPGRAM_API_KEY

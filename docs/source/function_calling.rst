@@ -8,7 +8,7 @@ Here’s how to define a function for a model:
 
     from switchai import SwitchAI
 
-    client = SwitchAI("gemini-1.5-flash-8b")
+    client = SwitchAI(provider="google", model_name="gemini-1.5-flash-8b")
 
     tools = [{
         "type": "function",

@@ -44,3 +44,8 @@ Classes Documentation
 .. autoclass:: switchai._response.Embedding
     :members:
     :exclude-members: model_config
+
+
+.. autoclass:: switchai._response.TranscriptionResponse
+    :members:
+    :exclude-members: model_config
