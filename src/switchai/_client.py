@@ -15,6 +15,9 @@ from ._response import (
     MistralEmbeddingResponseAdapter,
     ChatChoice,
     EmbeddingResponse,
+    TranscriptionResponse,
+    OpenAITranscriptionResponseAdapter,
+    DeepgramTranscriptionResponseAdapter,
 )
 
 
@@ -26,8 +29,9 @@ warnings.showwarning = showwarning
 
 SUPPORTED_MODELS = {
     "openai": {
-        "chat": ["gpt-4o-mini", "gpt-4o", "o1-preview", "o1-mini"],
+        "chat": ["gpt-4o-mini", "gpt-4o", "o1-preview", "o1-mini", "gpt-4"],
         "embed": ["text-embedding-ada-002", "text-embedding-3-small", "text-embedding-3-large"],
+        "transcribe": ["whisper-1"],
     },
     "mistral": {
         "chat": [
@@ -45,6 +49,19 @@ SUPPORTED_MODELS = {
         "chat": ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.5-flash-8b"],
         "embed": ["models/text-embedding-004", "models/embedding-001"],
     },
+    "deepgram": {
+        "transcribe": [
+            "nova-2",
+            "nova",
+            "enhanced",
+            "base",
+            "whisper-tiny",
+            "whisper-small",
+            "whisper-base",
+            "whisper-medium",
+            "whisper-large",
+        ]
+    },
 }
 
 API_KEYS_NAMING = {
@@ -53,6 +70,7 @@ API_KEYS_NAMING = {
     "xai": "XAI_API_KEY",
     "anthropic": "ANTHROPIC_API_KEY",
     "google": "GEMINI_API_KEY",
+    "deepgram": "DEEPGRAM_API_KEY",
 }
 
 
@@ -61,53 +79,83 @@ class SwitchAI:
     The SwitchAI client class.
 
     Args:
+            provider (str): The name of the provider to use.
             model_name (str): The name of the model to use.
             api_key (str, optional): The API key to use, if not set it will be read from the environment variable. Defaults to None.
     """
 
-    def __init__(self, model_name: str, api_key: str | None = None):
+    def __init__(self, provider: str, model_name: str, api_key: str | None = None):
+        self.provider = provider.lower()
         self.model_name = model_name
-        self.provider_name = self.get_provider_name(model_name)
-        if not self.provider_name:
-            raise ValueError(f"Model '{model_name}' is not supported.")
+
+        # Validate provider
+        if provider not in SUPPORTED_MODELS:
+            supported_providers = ", ".join(SUPPORTED_MODELS.keys())
+            raise ValueError(
+                f"Provider '{provider}' is not supported. Supported providers are: {supported_providers}."
+            )
+
+        # Validate model for the provider
+        provider_models = SUPPORTED_MODELS[provider]
+        model_supported = any(self.model_name in models for models in provider_models.values())
+        if not model_supported:
+            # Check if the model is supported by other providers
+            alternative_providers = [
+                p
+                for p, models in SUPPORTED_MODELS.items()
+                if any(self.model_name in m_list for m_list in models.values())
+            ]
+            if alternative_providers:
+                alternatives = ", ".join(alternative_providers)
+                raise ValueError(
+                    f"Model '{self.model_name}' is not supported by provider '{provider}'. "
+                    f"However, it is supported by: {alternatives}."
+                )
+            else:
+                raise ValueError(f"Model '{self.model_name}' is not supported by any provider.")
 
         self.model_category = self.get_model_category(model_name)
 
         if api_key is None:
-            api_key = os.environ.get(API_KEYS_NAMING[self.provider_name])
+            api_key = os.environ.get(API_KEYS_NAMING[self.provider])
         if api_key is None:
             raise ValueError(
-                f"The api_key client option must be set either by passing api_key to the client or by setting the {API_KEYS_NAMING[self.provider_name]} environment variable"
+                f"The api_key client option must be set either by passing api_key to the client or by setting the {API_KEYS_NAMING[self.provider]} environment variable"
             )
 
-        if self.provider_name == "openai":
+        if self.provider == "openai":
             from openai import OpenAI
 
             self.client = OpenAI(api_key=api_key)
 
-        elif self.provider_name == "xai":
+        elif self.provider == "xai":
             from openai import OpenAI
 
             self.client = OpenAI(api_key=api_key, base_url="https://api.x.ai/v1")
 
-        elif self.provider_name == "mistral":
+        elif self.provider == "mistral":
             from mistralai import Mistral
 
             self.client = Mistral(api_key=api_key)
 
-        elif self.provider_name == "anthropic":
+        elif self.provider == "anthropic":
             from anthropic import Anthropic
 
             self.client = Anthropic(api_key=api_key)
 
-        elif self.provider_name == "google":
+        elif self.provider == "google":
             import google.generativeai as genai
 
             genai.configure(api_key=api_key)
             # Delay the client creation until the chat method is called because a system prompt can't be set after the client is created
 
+        elif self.provider == "deepgram":
+            from deepgram import DeepgramClient
+
+            self.client = DeepgramClient(api_key=api_key)
+
     def chat(
-            self, messages, temperature: float = 1.0, max_tokens: int | None = None, n: int = 1, tools: List = None
+        self, messages, temperature: float = 1.0, max_tokens: int | None = None, n: int = 1, tools: List = None
     ) -> ChatResponse:
         """
         Sends a chat request to the AI model and returns the response.
@@ -125,7 +173,7 @@ class SwitchAI:
         if self.model_category != "chat":
             raise ValueError(f"Model '{self.model_name}' is not a chat model.")
 
-        if self.provider_name in ["openai", "xai"]:
+        if self.provider in ["openai", "xai"]:
             from openai import NOT_GIVEN
 
             # Convert ChatChoice objects to what the API expects
@@ -149,7 +197,7 @@ class SwitchAI:
 
             return OpenAIChatResponseAdapter(response)
 
-        elif self.provider_name == "mistral":
+        elif self.provider == "mistral":
             response = self.client.chat.complete(
                 model=self.model_name,
                 messages=messages,
@@ -161,7 +209,7 @@ class SwitchAI:
 
             return MistralChatResponseAdapter(response)
 
-        elif self.provider_name == "anthropic":
+        elif self.provider == "anthropic":
             from anthropic import NOT_GIVEN
 
             if n != 1:
@@ -222,7 +270,7 @@ class SwitchAI:
 
             return AnthropicChatResponseAdapter(response)
 
-        elif self.provider_name == "google":
+        elif self.provider == "google":
             import google.generativeai as genai
 
             system_instruction = None
@@ -292,7 +340,7 @@ class SwitchAI:
         Embeds the input text using the AI model.
 
         Args:
-            input (Union[str, List[str]]): The input text to embed.
+            input (Union[str, List[str]]): The input text to embed. Can be a single string or a list of strings.
 
         Returns:
             EmbeddingResponse: The response from the model.
@@ -300,12 +348,12 @@ class SwitchAI:
         if self.model_category != "embed":
             raise ValueError(f"Model '{self.model_name}' is not an embedding model.")
 
-        if self.provider_name == "openai" or self.provider_name == "xai":
+        if self.provider == "openai":
             response = self.client.embeddings.create(input=input, model=self.model_name)
 
             return OpenAIEmbeddingResponseAdapter(response)
 
-        elif self.provider_name == "mistral":
+        elif self.provider == "mistral":
             response = self.client.embeddings.create(
                 model=self.model_name,
                 inputs=input,
@@ -313,7 +361,7 @@ class SwitchAI:
 
             return MistralEmbeddingResponseAdapter(response)
 
-        elif self.provider_name == "google":
+        elif self.provider == "google":
             import google.generativeai as genai
 
             if isinstance(input, str):
@@ -326,22 +374,47 @@ class SwitchAI:
 
             return GoogleEmbeddingResponseAdapter(response)
 
-    @staticmethod
-    def get_provider_name(model_name: str) -> str | None:
+    def transcribe(self, audio_path: str, language: str = None) -> TranscriptionResponse:
         """
-        Returns the provider name for a given model name if supported, otherwise None.
+        Convert speech to text.
 
         Args:
-            model_name (str): The name of the model to look for.
+            audio_path (str): The path to the audio file.
+            language (str, optional): The language of the audio file.
 
         Returns:
-            str | None: The name of the provider if the model is found, otherwise None.
+            TranscriptionResponse: The response from the model.
         """
-        for provider, categories in SUPPORTED_MODELS.items():
-            for model_list in categories.values():
-                if model_name in model_list:
-                    return provider
-        return None
+
+        if self.model_category != "transcribe":
+            raise ValueError(f"Model '{self.model_name}' is not a speech-to-text model.")
+
+        if self.provider == "openai":
+            with open(audio_path, "rb") as audio_file:
+                response = self.client.audio.transcriptions.create(
+                    model=self.model_name, file=audio_file, language=language
+                )
+
+            return OpenAITranscriptionResponseAdapter(response)
+
+        elif self.provider == "deepgram":
+            from deepgram import PrerecordedOptions, FileSource
+
+            with open(audio_path, "rb") as file:
+                buffer_data = file.read()
+
+            payload: FileSource = {
+                "buffer": buffer_data,
+            }
+
+            options = PrerecordedOptions(
+                model=self.model_name,
+                language=language,
+            )
+
+            response = self.client.listen.rest.v("1").transcribe_file(payload, options)
+
+            return DeepgramTranscriptionResponseAdapter(response)
 
     @staticmethod
     def get_model_category(model_name: str) -> str:

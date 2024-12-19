@@ -320,3 +320,24 @@ class GoogleEmbeddingResponseAdapter(EmbeddingResponse):
                 for index, data in enumerate(response["embedding"])
             ],
         )
+
+
+class TranscriptionResponse(BaseModel):
+    """
+    A transcription of an input audio.
+
+    Args:
+        text (str): The transcribed text.
+    """
+
+    text: str
+
+
+class OpenAITranscriptionResponseAdapter(TranscriptionResponse):
+    def __init__(self, response):
+        super().__init__(text=response.text)
+
+
+class DeepgramTranscriptionResponseAdapter(TranscriptionResponse):
+    def __init__(self, response):
+        super().__init__(text=response["results"]["channels"][0]["alternatives"][0]["transcript"])

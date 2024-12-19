@@ -17,13 +17,13 @@ If you choose to use environment variables, ensure you follow the naming convent
 
 ### Example Usage  
 
-#### Chat Example  
+#### Chat  
 
 ```python
 from switchai import SwitchAI
 
 # Initialize the client with the desired AI model
-client = SwitchAI("gpt-4o")
+client = SwitchAI(provider="openai", model_name="gpt-4o")
 
 # Send a message and receive a response
 response = client.chat(
@@ -36,13 +36,13 @@ response = client.chat(
 print(response)
 ```
 
-#### Text Embedding Example  
+#### Text Embedding  
 
 ```python
 from switchai import SwitchAI
 
 # Initialize the client with the chosen embedding model
-client = SwitchAI("models/text-embedding-004")
+client = SwitchAI(provider="google", model_name="models/text-embedding-004")
 
 # Generate embeddings for a list of text inputs
 response = client.embed(
@@ -50,6 +50,23 @@ response = client.embed(
         "I am feeling great today!",
         "I am feeling sad today."
     ]
+)
+
+# Print the response
+print(response)
+```
+
+#### Speech to text  
+
+```python
+from switchai import SwitchAI
+
+# Initialize the client with the desired speech-to-text model
+client = SwitchAI(provider="deepgram", model_name="nova-2")
+
+# Transcribe an audio file
+response = client.transcribe(
+    audio_path="path/to/audio/file.wav"
 )
 
 # Print the response
