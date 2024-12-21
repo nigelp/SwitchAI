@@ -18,6 +18,7 @@ from ._response import (
     TranscriptionResponse,
     OpenAITranscriptionResponseAdapter,
     DeepgramTranscriptionResponseAdapter,
+    VoyageAIEmbeddingResponseAdapter,
 )
 
 
@@ -62,6 +63,17 @@ SUPPORTED_MODELS = {
             "whisper-large",
         ]
     },
+    "voyageai": {
+        "embed": [
+            "voyage-3-large",
+            "voyage-3",
+            "voyage-3-lite",
+            "voyage-code-3",
+            "voyage-finance-2",
+            "voyage-law-2",
+            "voyage-code-2",
+        ]
+    },
 }
 
 API_KEYS_NAMING = {
@@ -71,6 +83,7 @@ API_KEYS_NAMING = {
     "anthropic": "ANTHROPIC_API_KEY",
     "google": "GEMINI_API_KEY",
     "deepgram": "DEEPGRAM_API_KEY",
+    "voyageai": "VOYAGE_API_KEY",
 }
 
 
@@ -153,6 +166,11 @@ class SwitchAI:
             from deepgram import DeepgramClient
 
             self.client = DeepgramClient(api_key=api_key)
+
+        elif self.provider == "voyageai":
+            import voyageai
+
+            self.client = voyageai.Client(api_key=api_key)
 
     def chat(
         self, messages, temperature: float = 1.0, max_tokens: int | None = None, n: int = 1, tools: List = None
@@ -373,6 +391,11 @@ class SwitchAI:
             )
 
             return GoogleEmbeddingResponseAdapter(response)
+
+        elif self.provider == "voyageai":
+            response = self.client.embed(input, model=self.model_name)
+
+            return VoyageAIEmbeddingResponseAdapter(response)
 
     def transcribe(self, audio_path: str, language: str = None) -> TranscriptionResponse:
         """

@@ -3,3 +3,4 @@ openai
 mistralai
 anthropic
 deepgram-sdk
+voyageai

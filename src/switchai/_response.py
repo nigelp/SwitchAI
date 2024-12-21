@@ -322,6 +322,26 @@ class GoogleEmbeddingResponseAdapter(EmbeddingResponse):
         )
 
 
+class VoyageAIEmbeddingResponseAdapter(EmbeddingResponse):
+    def __init__(self, response):
+        super().__init__(
+            id=None,
+            object=None,
+            model=None,
+            usage=EmbeddingUsage(
+                input_tokens=response.total_tokens,
+                total_tokens=response.total_tokens,
+            ),
+            embeddings=[
+                Embedding(
+                    index=index,
+                    data=data,
+                )
+                for index, data in enumerate(response.embeddings)
+            ],
+        )
+
+
 class TranscriptionResponse(BaseModel):
     """
     A transcription of an input audio.
