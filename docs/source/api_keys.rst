@@ -40,3 +40,4 @@ Replace PROVIDER_API_KEY_NAMING with the following naming convention for the pro
     "**Anthropic**", ANTHROPIC_API_KEY
     "**Google**", GEMINI_API_KEY
     "**Deepgram**", DEEPGRAM_API_KEY
+    "**VoyageAI**", VOYAGE_API_KEY

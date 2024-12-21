@@ -20,9 +20,9 @@ These models are optimized for generating human-like responses in chat applicati
 
     **Google**, "``gemini-1.5-flash``, ``gemini-1.5-pro``, ``gemini-1.5-flash-8b``"
 
-Embedding
----------
-Embedding models generate numerical representations of text for tasks like similarity search, clustering, and classification.
+Text Embeddings
+---------------
+Text embedding models generate numerical representations of text for tasks like similarity search, clustering, and classification.
 
 .. csv-table::
    :widths: 5, 30
@@ -33,7 +33,9 @@ Embedding models generate numerical representations of text for tasks like simil
 
     **Google**, "``models/text-embedding-004``, ``models/embedding-001``"
 
-Speech to text
+    **VoyageAI**, "``voyage-3-large``, ``voyage-3``, ``voyage-3-lite``, ``voyage-code-3``, ``voyage-finance-2``, ``voyage-law-2``, ``voyage-code-2``"
+
+Speech to Text
 --------------
 Speech to text models convert spoken language into written text.
 
