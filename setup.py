@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='switchai',
-    version='0.2.2',
+    version='0.2.3',
     description='A unified library for interacting with various AI APIs through a standardized interface.',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',

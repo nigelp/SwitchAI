@@ -1,25 +1,9 @@
-import copy
 import os
 import warnings
-from dataclasses import asdict
 from typing import Union, List
 
-from ._response import (
-    ChatResponse,
-    OpenAIChatResponseAdapter,
-    MistralChatResponseAdapter,
-    AnthropicChatResponseAdapter,
-    GoogleChatResponseAdapter,
-    OpenAIEmbeddingResponseAdapter,
-    GoogleEmbeddingResponseAdapter,
-    MistralEmbeddingResponseAdapter,
-    ChatChoice,
-    EmbeddingResponse,
-    TranscriptionResponse,
-    OpenAITranscriptionResponseAdapter,
-    DeepgramTranscriptionResponseAdapter,
-    VoyageAIEmbeddingResponseAdapter,
-)
+from .providers import *
+from .types import ChatResponse, TextEmbeddingResponse, TranscriptionResponse
 
 
 def showwarning(message, category, filename, lineno, file=None, line=None):
@@ -38,6 +22,8 @@ SUPPORTED_MODELS = {
         "chat": [
             "mistral-large-latest",
             "mistral-small-latest",
+            "pixtral-large-latest",
+            "pixtral-12b",
             "open-mistral-7b",
             "open-mixtral-8x7b",
             "open-mixtral-8x22b",
@@ -161,6 +147,7 @@ class SwitchAI:
 
             genai.configure(api_key=api_key)
             # Delay the client creation until the chat method is called because a system prompt can't be set after the client is created
+            self.client = None
 
         elif self.provider == "deepgram":
             from deepgram import DeepgramClient
@@ -192,98 +179,49 @@ class SwitchAI:
             raise ValueError(f"Model '{self.model_name}' is not a chat model.")
 
         if self.provider in ["openai", "xai"]:
-            from openai import NOT_GIVEN
-
-            # Convert ChatChoice objects to what the API expects
-            # Mainly used for tool calls
-            for i, message in enumerate(messages):
-                if type(message) == ChatChoice:
-                    messages[i] = {
-                        "role": message.message.role,
-                        "content": message.message.content,
-                        "tool_calls": [asdict(too_call) for too_call in message.tool_calls],
-                    }
+            adapted_inputs = OpenAIChatInputsAdapter(messages, tools)
 
             response = self.client.chat.completions.create(
                 model=self.model_name,
-                messages=messages,
+                messages=adapted_inputs.messages,
                 temperature=temperature,
                 max_completion_tokens=max_tokens,
                 n=n,
-                tools=NOT_GIVEN if tools is None else tools,
+                tools=adapted_inputs.tools,
             )
 
             return OpenAIChatResponseAdapter(response)
 
         elif self.provider == "mistral":
+            adapted_inputs = MistralChatInputsAdapter(messages, tools)
+
             response = self.client.chat.complete(
                 model=self.model_name,
-                messages=messages,
+                messages=adapted_inputs.messages,
                 temperature=temperature,
                 max_tokens=max_tokens,
                 n=n,
-                tools=tools,
+                tools=adapted_inputs.tools,
             )
 
             return MistralChatResponseAdapter(response)
 
         elif self.provider == "anthropic":
-            from anthropic import NOT_GIVEN
-
             if n != 1:
                 warnings.warn(f"Anthropic models ({self.model_name}) only support n=1. Ignoring n={n}.")
 
             if max_tokens is None:
                 raise ValueError(f"max_tokens must be set for Anthropic models ({self.model_name}).")
 
-            system = NOT_GIVEN
-            if messages[0]["role"] == "system":
-                system = messages[0]["content"]
-                messages = messages[1:]
-
-            # Convert ChatChoice objects to what the API expects
-            # Mainly used for tool calls
-            for i, message in enumerate(messages):
-                if type(message) == ChatChoice:
-                    messages[i] = {
-                        "role": message.message.role,
-                        "content": [
-                            {"type": "text", "text": message.message.content},
-                            {
-                                "type": "tool_use",
-                                "id": message.tool_calls[0].id,
-                                "name": message.tool_calls[0].function.name,
-                                "input": message.tool_calls[0].function.arguments,
-                            },
-                        ],
-                    }
-
-                elif message["role"] == "tool":
-                    messages[i] = {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "tool_result",
-                                "tool_use_id": message["tool_call_id"],
-                                "content": message["content"],
-                            }
-                        ],
-                    }
-
-            adapted_tools = []
-            if tools:
-                for tool in tools:
-                    tool_copy = copy.deepcopy(tool)
-                    tool_copy["function"]["input_schema"] = tool_copy["function"].pop("parameters")
-                    adapted_tools.append(tool_copy["function"])
+            adapted_inputs = AnthropicChatInputsAdapter(messages, tools=tools)
 
             response = self.client.messages.create(
                 model=self.model_name,
-                messages=messages,
-                system=system,
+                messages=adapted_inputs.messages,
+                system=adapted_inputs.system_prompt,
                 temperature=temperature,
                 max_tokens=max_tokens,
-                tools=adapted_tools,
+                tools=adapted_inputs.tools,
             )
 
             return AnthropicChatResponseAdapter(response)
@@ -291,69 +229,24 @@ class SwitchAI:
         elif self.provider == "google":
             import google.generativeai as genai
 
-            system_instruction = None
-            if messages[0]["role"] == "system":
-                system_instruction = messages[0]["content"]
-                messages = messages[1:]
+            adapted_inputs = GoogleChatInputsAdapter(messages, tools)
 
-            # Adapt the messages format
-            messages = copy.deepcopy(messages)
-            for i, message in enumerate(messages):
-                if type(message) == ChatChoice:
-                    messages[i] = {
-                        "role": message.message.role,
-                        "parts": [
-                            {
-                                "function_call": {
-                                    "name": message.tool_calls[0].function.name,
-                                    "args": message.tool_calls[0].function.arguments,
-                                }
-                            }
-                        ],
-                    }
-                elif message["role"] == "tool":
-                    messages[i] = {
-                        "role": "user",
-                        "parts": [
-                            {
-                                "function_response": {
-                                    "name": message["tool_name"],
-                                    "response": {
-                                        "name": message["tool_name"],
-                                        "content": message["content"],
-                                    },
-                                }
-                            }
-                        ],
-                    }
-                else:
-                    message["role"] = "model" if message["role"] == "assistant" else message["role"]
-                    message["parts"] = message.pop("content")
-
-            adapted_tools = None
-            if tools:
-                adapted_tools = [{"function_declarations": []}]
-                for tool in tools:
-                    function = tool["function"]
-                    if "description" not in function:
-                        function["description"] = ""
-                    adapted_tools[0]["function_declarations"].append(function)
-
-            self.client = genai.GenerativeModel(self.model_name, system_instruction=system_instruction)
+            if self.client is None:
+                self.client = genai.GenerativeModel(self.model_name, system_instruction=adapted_inputs.system_prompt)
 
             response = self.client.generate_content(
-                contents=messages,
+                contents=adapted_inputs.messages,
                 generation_config=genai.types.GenerationConfig(
                     candidate_count=n,
                     max_output_tokens=max_tokens,
                     temperature=temperature,
                 ),
-                tools=adapted_tools,
+                tools=adapted_inputs.tools,
             )
 
             return GoogleChatResponseAdapter(response)
 
-    def embed(self, input: Union[str, List[str]]) -> EmbeddingResponse:
+    def embed(self, input: Union[str, List[str]]) -> TextEmbeddingResponse:
         """
         Embeds the input text using the AI model.
 
@@ -369,7 +262,7 @@ class SwitchAI:
         if self.provider == "openai":
             response = self.client.embeddings.create(input=input, model=self.model_name)
 
-            return OpenAIEmbeddingResponseAdapter(response)
+            return OpenAITextEmbeddingResponseAdapter(response)
 
         elif self.provider == "mistral":
             response = self.client.embeddings.create(
@@ -377,7 +270,7 @@ class SwitchAI:
                 inputs=input,
             )
 
-            return MistralEmbeddingResponseAdapter(response)
+            return MistralTextEmbeddingResponseAdapter(response)
 
         elif self.provider == "google":
             import google.generativeai as genai
@@ -390,12 +283,12 @@ class SwitchAI:
                 model=self.model_name,
             )
 
-            return GoogleEmbeddingResponseAdapter(response)
+            return GoogleTextEmbeddingResponseAdapter(response)
 
         elif self.provider == "voyageai":
             response = self.client.embed(input, model=self.model_name)
 
-            return VoyageAIEmbeddingResponseAdapter(response)
+            return VoyageAITextEmbeddingResponseAdapter(response)
 
     def transcribe(self, audio_path: str, language: str = None) -> TranscriptionResponse:
         """

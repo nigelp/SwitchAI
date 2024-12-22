@@ -36,6 +36,31 @@ response = client.chat(
 print(response)
 ```
 
+#### Vision  
+
+```python
+from switchai import SwitchAI
+
+# Initialize the client with the a vision model
+client = SwitchAI(provider="mistral", model_name="pixtral-large-latest")
+
+# Send an image with a question and receive a response
+response = client.chat(
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "What's in this image?"},
+                {"type": "image", "image": "path/to/image/file.jpg"},
+            ],
+        }
+    ]
+)
+
+# Print the response
+print(response)
+```
+
 #### Text Embedding  
 
 ```python

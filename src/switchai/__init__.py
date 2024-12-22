@@ -1,1 +1,1 @@
-from ._client import SwitchAI
+from .client import SwitchAI
