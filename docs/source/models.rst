@@ -12,7 +12,7 @@ These models are optimized for generating human-like responses in chat applicati
 
     **OpenAI**, "``gpt-4o-mini``, ``gpt-4o``, ``o1-preview``, ``o1-mini``, ``gpt-4``"
 
-    **Mistral**, "``mistral-large-latest``, ``mistral-small-latest``, ``open-mistral-7b``, ``open-mixtral-8x7b``, ``open-mixtral-8x22b``"
+    **Mistral**, "``mistral-large-latest``, ``mistral-small-latest``, ``pixtral-large-latest``, ``pixtral-12b``, ``open-mistral-7b``, ``open-mixtral-8x7b``, ``open-mixtral-8x22b``"
 
     **xAI**, "``grok-beta``, ``grok-vision-beta``"
 

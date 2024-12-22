@@ -8,44 +8,44 @@ Classes Documentation
    :exclude-members: get_model_category, get_provider_name
 
 
-.. autoclass:: switchai._response.ChatResponse
+.. autoclass:: switchai.types.ChatResponse
     :members:
     :exclude-members: model_config
 
-.. autoclass:: switchai._response.ChatUsage
+.. autoclass:: switchai.types.ChatUsage
     :members:
     :exclude-members: model_config
 
-.. autoclass:: switchai._response.ChatChoice
+.. autoclass:: switchai.types.ChatChoice
     :members:
     :exclude-members: model_config
 
-.. autoclass:: switchai._response.ChatToolCall
+.. autoclass:: switchai.types.ChatToolCall
     :members:
     :exclude-members: model_config
 
-.. autoclass:: switchai._response.ChatMessage
+.. autoclass:: switchai.types.ChatMessage
     :members:
     :exclude-members: model_config
 
-.. autoclass:: switchai._response.Function
-    :members:
-    :exclude-members: model_config
-
-
-.. autoclass:: switchai._response.EmbeddingResponse
-    :members:
-    :exclude-members: model_config
-
-.. autoclass:: switchai._response.EmbeddingUsage
-    :members:
-    :exclude-members: model_config
-
-.. autoclass:: switchai._response.Embedding
+.. autoclass:: switchai.types.Function
     :members:
     :exclude-members: model_config
 
 
-.. autoclass:: switchai._response.TranscriptionResponse
+.. autoclass:: switchai.types.TextEmbeddingResponse
+    :members:
+    :exclude-members: model_config
+
+.. autoclass:: switchai.types.EmbeddingUsage
+    :members:
+    :exclude-members: model_config
+
+.. autoclass:: switchai.types.Embedding
+    :members:
+    :exclude-members: model_config
+
+
+.. autoclass:: switchai.types.TranscriptionResponse
     :members:
     :exclude-members: model_config
