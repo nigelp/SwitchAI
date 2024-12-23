@@ -3,7 +3,7 @@ import warnings
 from typing import Union, List
 
 from .providers import *
-from .types import ChatResponse, TextEmbeddingResponse, TranscriptionResponse
+from .types import ChatResponse, TextEmbeddingResponse, TranscriptionResponse, ImageGenerationResponse
 
 
 def showwarning(message, category, filename, lineno, file=None, line=None):
@@ -17,6 +17,7 @@ SUPPORTED_MODELS = {
         "chat": ["gpt-4o-mini", "gpt-4o", "o1-preview", "o1-mini", "gpt-4"],
         "embed": ["text-embedding-ada-002", "text-embedding-3-small", "text-embedding-3-large"],
         "transcribe": ["whisper-1"],
+        "generate_image": ["dall-e-3", "dall-e-2"],
     },
     "mistral": {
         "chat": [
@@ -60,6 +61,9 @@ SUPPORTED_MODELS = {
             "voyage-code-2",
         ]
     },
+    "replicate": {
+        "generate_image": ["black-forest-labs/flux-schnell", "stability-ai/sdxl"],
+    },
 }
 
 API_KEYS_NAMING = {
@@ -70,6 +74,7 @@ API_KEYS_NAMING = {
     "google": "GEMINI_API_KEY",
     "deepgram": "DEEPGRAM_API_KEY",
     "voyageai": "VOYAGE_API_KEY",
+    "replicate": "REPLICATE_API_TOKEN",
 }
 
 
@@ -158,6 +163,11 @@ class SwitchAI:
             import voyageai
 
             self.client = voyageai.Client(api_key=api_key)
+
+        elif self.provider == "replicate":
+            from replicate.client import Client
+
+            self.client = Client(api_token=api_key)
 
     def chat(
         self, messages, temperature: float = 1.0, max_tokens: int | None = None, n: int = 1, tools: List = None
@@ -331,6 +341,35 @@ class SwitchAI:
             response = self.client.listen.rest.v("1").transcribe_file(payload, options)
 
             return DeepgramTranscriptionResponseAdapter(response)
+
+    def generate_image(self, prompt: str, n: int = 1) -> ImageGenerationResponse:
+        """
+        Generate an image based on the provided prompt.
+
+        Args:
+            prompt (str): A text description of the desired image.
+            n (int, optional): The number of images to generate.  Defaults to 1.
+
+        Returns:
+            ImageGenerationResponse: The response from the model.
+        """
+
+        if self.model_category != "generate_image":
+            raise ValueError(f"Model '{self.model_name}' is not an image generation model.")
+
+        if self.provider == "openai":
+            response = self.client.images.generate(model=self.model_name, prompt=prompt, n=n)
+
+            return OpenAIImageGenerationResponseAdapter(response)
+
+        elif self.provider == "replicate":
+            latest_version_id = self.client.models.get(self.model_name).latest_version.id
+            response = self.client.run(
+                ref=f"{self.model_name}:{latest_version_id}",
+                input={"prompt": prompt, "num_outputs": n, "output_format": "png"},
+            )
+
+            return ReplicateImageGenerationResponseAdapter(response)
 
     @staticmethod
     def get_model_category(model_name: str) -> str:

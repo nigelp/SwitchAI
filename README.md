@@ -1,8 +1,10 @@
-# SwitchAI  
+# SwitchAI
 
-SwitchAI is a lightweight and flexible library that provides a standardized interface for interacting with various AI APIs like OpenAI, Anthropic, Mistral, and more. With SwitchAI, you can easily switch between AI providers or use multiple APIs simultaneously, all with a simple and consistent interface.  
+SwitchAI is a lightweight and flexible library that provides a standardized interface for interacting with various AI
+APIs like OpenAI, Anthropic, Mistral, and more. With SwitchAI, you can easily switch between AI providers or use
+multiple APIs simultaneously, all with a simple and consistent interface.
 
-## Installation  
+## Installation
 
 You can install just the base `switchai` package, or install a provider's package along with it.
 
@@ -26,7 +28,8 @@ You can install just the base `switchai` package, or install a provider's packag
 
 ## Getting Started
 
-To use SwitchAI, you will need API keys for the AI providers you intend to interact with. You can set these keys either as environment variables or pass them as configuration to the `SwitchAI` client.  
+To use SwitchAI, you will need API keys for the AI providers you intend to interact with. You can set these keys either
+as environment variables or pass them as configuration to the `SwitchAI` client.
 
 ### Option 1: In Code
 
@@ -41,20 +44,24 @@ client = SwitchAI(provider="openai", model_name="gpt-4", api_key="your_api_key")
 Set the API key as an environment variable:
 
 **macOS/Linux:**
+
 ```bash
 export PROVIDER_API_KEY="your_api_key"
 ```
 
 **Windows:**
+
 ```bash
 set PROVIDER_API_KEY="your_api_key"
 ```
 
-Make sure you follow the correct naming conventions for each provider's API key, as outlined in the [documentation](https://switchai.readthedocs.io/en/latest/api_keys.html). This ensures that SwitchAI can automatically detect and use the appropriate key for the chosen provider.
+Make sure you follow the correct naming conventions for each provider's API key, as outlined in
+the [documentation](https://switchai.readthedocs.io/en/latest/api_keys.html). This ensures that SwitchAI can
+automatically detect and use the appropriate key for the chosen provider.
 
-## Example Usage  
+## Example Usage
 
-### Chat  
+### Chat
 
 ```python
 from switchai import SwitchAI
@@ -73,7 +80,7 @@ response = client.chat(
 print(response)
 ```
 
-### Vision  
+### Vision
 
 ```python
 from switchai import SwitchAI
@@ -98,7 +105,7 @@ response = client.chat(
 print(response)
 ```
 
-### Text Embedding  
+### Text Embedding
 
 ```python
 from switchai import SwitchAI
@@ -118,7 +125,7 @@ response = client.embed(
 print(response)
 ```
 
-### Speech to text  
+### Speech to Text
 
 ```python
 from switchai import SwitchAI
@@ -135,10 +142,22 @@ response = client.transcribe(
 print(response)
 ```
 
-## Documentation  
+### Image Generation
 
-For full documentation, visit [SwitchAI Documentation](https://switchai.readthedocs.io/).  
+```python
+from switchai import SwitchAI
 
-## Contributing  
+client = SwitchAI(provider="replicate", model_name="black-forest-labs/flux-schnell")
+response = client.generate_image("A beautiful sunset over the mountains.")
+
+image = response.images[0]
+image.show()
+```
+
+## Documentation
+
+For full documentation, visit [SwitchAI Documentation](https://switchai.readthedocs.io/).
+
+## Contributing
 
 Contributions are always welcome! If you'd like to help enhance SwitchAI, feel free to make a contribution.

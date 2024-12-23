@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 
-deps = ["pydantic"]
+deps = ["pydantic", "Pillow"]
 
 extras = {}
 
@@ -11,6 +11,7 @@ extras["anthropic"] = ["anthropic"]
 extras["google-generativeai"] = ["google-generativeai"]
 extras["deepgram-sdk"] = ["deepgram-sdk"]
 extras["voyageai"] = ["voyageai"]
+extras["replicate"] = ["replicate"]
 
 extras["all"] = (
     extras["openai"]
@@ -19,11 +20,12 @@ extras["all"] = (
     + extras["google-generativeai"]
     + extras["deepgram-sdk"]
     + extras["voyageai"]
+    + extras["replicate"]
 )
 
 setup(
     name="switchai",
-    version="0.2.4",
+    version="0.2.5",
     description="A unified library for interacting with various AI APIs through a standardized interface.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",

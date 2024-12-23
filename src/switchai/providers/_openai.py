@@ -1,5 +1,8 @@
 import json
+from io import BytesIO
 
+import httpx
+from PIL import Image
 from openai import NOT_GIVEN
 
 from ..types import (
@@ -13,6 +16,7 @@ from ..types import (
     EmbeddingUsage,
     Embedding,
     TranscriptionResponse,
+    ImageGenerationResponse,
 )
 from ..utils import is_url, encode_image
 
@@ -127,3 +131,14 @@ class OpenAITextEmbeddingResponseAdapter(TextEmbeddingResponse):
 class OpenAITranscriptionResponseAdapter(TranscriptionResponse):
     def __init__(self, response):
         super().__init__(text=response.text)
+
+
+class OpenAIImageGenerationResponseAdapter(ImageGenerationResponse):
+    def __init__(self, response):
+        images = []
+        for image in response.data:
+            downloaded_image = httpx.get(image.url)
+            pil_image = Image.open(BytesIO(downloaded_image.content))
+            images.append(pil_image)
+
+        super().__init__(images=images)

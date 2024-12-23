@@ -1,6 +1,8 @@
 pydantic
+Pillow
 openai
 mistralai
 anthropic
 deepgram-sdk
 voyageai
+replicate

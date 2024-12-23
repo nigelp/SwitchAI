@@ -1,6 +1,7 @@
 from typing import Dict, Any, List, Optional
 
-from pydantic import BaseModel
+from PIL.Image import Image
+from pydantic import BaseModel, field_validator, ValidationError
 
 
 class Function(BaseModel):
@@ -159,3 +160,23 @@ class OpenAITranscriptionResponseAdapter(TranscriptionResponse):
 class DeepgramTranscriptionResponseAdapter(TranscriptionResponse):
     def __init__(self, response):
         super().__init__(text=response["results"]["channels"][0]["alternatives"][0]["transcript"])
+
+
+class ImageGenerationResponse(BaseModel):
+    """
+    Represents an image generation response from the model, based on the provided input.
+
+    Args:
+        images (List[:class:`~PIL.Image.Image`]): A list of generated images.
+    """
+
+    images: List[Any]
+
+    @field_validator("images", mode="before")
+    def validate_images(cls, value):
+        if isinstance(value, list):
+            for img in value:
+                if not isinstance(img, Image):
+                    raise ValidationError("Each item must be a valid PIL.Image instance.")
+            return value
+        raise ValidationError("The value must be a list of PIL.Image instances.")
