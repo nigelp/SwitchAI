@@ -85,7 +85,7 @@ print(response)
 ```python
 from switchai import SwitchAI
 
-# Initialize the client with the a vision model
+# Initialize the client with the vision model
 client = SwitchAI(provider="mistral", model_name="pixtral-large-latest")
 
 # Send an image with a question and receive a response
