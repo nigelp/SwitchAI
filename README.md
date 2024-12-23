@@ -4,20 +4,57 @@ SwitchAI is a lightweight and flexible library that provides a standardized inte
 
 ## Installation  
 
-Install with pip:  
-```bash  
-pip install switchai  
-```
+You can install just the base `switchai` package, or install a provider's package along with it.
 
-## Getting Started  
+- **Base Package**: This installs just the base `switchai` package without installing any provider's SDK.
+
+  ```bash
+  pip install switchai
+  ```
+
+- **OpenAI Provider**: This installs `switchai` along with OpenAI's library.
+
+  ```bash
+  pip install switchai[openai]
+  ```
+
+- **All Providers**: This installs `switchai` along with all provider-specific libraries.
+
+  ```bash
+  pip install switchai[all]
+  ```
+
+## Getting Started
 
 To use SwitchAI, you will need API keys for the AI providers you intend to interact with. You can set these keys either as environment variables or pass them as configuration to the `SwitchAI` client.  
 
-If you choose to use environment variables, ensure you follow the naming conventions for each provider as outlined in the [documentation](https://switchai.readthedocs.io/en/latest/api_keys.html).
+### Option 1: In Code
 
-### Example Usage  
+```python
+from switchai import SwitchAI
 
-#### Chat  
+client = SwitchAI(provider="openai", model_name="gpt-4", api_key="your_api_key")
+```
+
+### Option 2: Environment Variables
+
+Set the API key as an environment variable:
+
+**macOS/Linux:**
+```bash
+export PROVIDER_API_KEY="your_api_key"
+```
+
+**Windows:**
+```bash
+set PROVIDER_API_KEY="your_api_key"
+```
+
+Make sure you follow the correct naming conventions for each provider's API key, as outlined in the [documentation](https://switchai.readthedocs.io/en/latest/api_keys.html). This ensures that SwitchAI can automatically detect and use the appropriate key for the chosen provider.
+
+## Example Usage  
+
+### Chat  
 
 ```python
 from switchai import SwitchAI
@@ -36,7 +73,7 @@ response = client.chat(
 print(response)
 ```
 
-#### Vision  
+### Vision  
 
 ```python
 from switchai import SwitchAI
@@ -61,7 +98,7 @@ response = client.chat(
 print(response)
 ```
 
-#### Text Embedding  
+### Text Embedding  
 
 ```python
 from switchai import SwitchAI
@@ -81,7 +118,7 @@ response = client.embed(
 print(response)
 ```
 
-#### Speech to text  
+### Speech to text  
 
 ```python
 from switchai import SwitchAI
