@@ -1,3 +1,4 @@
+httpx
 pydantic
 Pillow
 openai

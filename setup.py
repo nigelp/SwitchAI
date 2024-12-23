@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 
-deps = ["pydantic", "Pillow"]
+deps = ["pydantic", "Pillow", "httpx"]
 
 extras = {}
 
@@ -25,7 +25,7 @@ extras["all"] = (
 
 setup(
     name="switchai",
-    version="0.2.5",
+    version="0.2.6",
     description="A unified library for interacting with various AI APIs through a standardized interface.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
