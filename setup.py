@@ -1,20 +1,16 @@
 from setuptools import setup, find_packages
 
 
-def deps_list(*pkgs):
-    return [deps[pkg] for pkg in pkgs]
-
-
 deps = ["pydantic"]
 
 extras = {}
 
-extras["openai"] = deps_list("openai")
-extras["mistralai"] = deps_list("mistralai")
-extras["anthropic"] = deps_list("anthropic")
-extras["google-generativeai"] = deps_list("google-generativeai")
-extras["deepgram-sdk"] = deps_list("deepgram-sdk")
-extras["voyageai"] = deps_list("voyageai")
+extras["openai"] = ["openai"]
+extras["mistralai"] = ["mistralai"]
+extras["anthropic"] = ["anthropic"]
+extras["google-generativeai"] = ["google-generativeai"]
+extras["deepgram-sdk"] = ["deepgram-sdk"]
+extras["voyageai"] = ["voyageai"]
 
 extras["all"] = (
     extras["openai"]
