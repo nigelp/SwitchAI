@@ -1,4 +1,4 @@
-Speech to text
+Speech to Text
 ==============
 Transcribing spoken language into written text is a common task in many applications, such as voice assistants, transcription services, and video captioning. SwitchAI provides a simple interface to convert audio files or live speech into text using state-of-the-art speech-to-text models.
 

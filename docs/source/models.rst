@@ -45,3 +45,14 @@ Speech to text models convert spoken language into written text.
     **OpenAI**, "``whisper-1``"
 
     **Deepgram**, "``nova-2``, ``nova``, ``enhanced``, ``base``, ``whisper-tiny``, ``whisper-small``, ``whisper-base``, ``whisper-medium``, ``whisper-large``"
+
+Image Generation
+----------------
+Image generation models create images from textual descriptions.
+
+.. csv-table::
+   :widths: 5, 30
+
+    **OpenAI**, "``dall-e-3``, ``dall-e-2``"
+
+    **Replicate**, "``black-forest-labs/flux-schnell``, ``stability-ai/sdxl``"

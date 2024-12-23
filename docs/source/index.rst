@@ -26,8 +26,7 @@ Here’s a simple example of how to use SwitchAI:
     models
     api_keys
     chat
-    vision
-    function_calling
     embeddings
     speech_to_text
+    image_generation
     classes

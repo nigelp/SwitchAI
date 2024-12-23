@@ -49,3 +49,8 @@ Classes Documentation
 .. autoclass:: switchai.types.TranscriptionResponse
     :members:
     :exclude-members: model_config
+
+
+.. autoclass:: switchai.types.ImageGenerationResponse
+    :members:
+    :exclude-members: model_config
