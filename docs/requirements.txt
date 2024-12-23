@@ -3,3 +3,10 @@ furo
 sphinx-copybutton
 sphinxext.opengraph
 switchai
+
+openai
+mistralai
+anthropic
+deepgram-sdk
+voyageai
+replicate
