@@ -62,6 +62,7 @@ SUPPORTED_MODELS = {
         ]
     },
     "replicate": {
+        "transcribe": ["openai/whisper"],
         "generate_image": ["black-forest-labs/flux-schnell", "stability-ai/sdxl"],
     },
 }
@@ -341,6 +342,18 @@ class SwitchAI:
             response = self.client.listen.rest.v("1").transcribe_file(payload, options)
 
             return DeepgramTranscriptionResponseAdapter(response)
+
+        elif self.provider == "replicate":
+            latest_version_id = self.client.models.get(self.model_name).latest_version.id
+            with open(audio_path, "rb") as audio_file:
+                response = self.client.run(
+                    ref=f"{self.model_name}:{latest_version_id}",
+                    input={"audio": audio_file, "language": language if language else "auto"},
+                )
+
+                print(response)
+
+            return ReplicateTranscriptionResponseAdapter(response)
 
     def generate_image(self, prompt: str, n: int = 1) -> ImageGenerationResponse:
         """

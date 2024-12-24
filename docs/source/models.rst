@@ -46,6 +46,8 @@ Speech to text models convert spoken language into written text.
 
     **Deepgram**, "``nova-2``, ``nova``, ``enhanced``, ``base``, ``whisper-tiny``, ``whisper-small``, ``whisper-base``, ``whisper-medium``, ``whisper-large``"
 
+    **Replicate**, "``openai/whisper``"
+
 Image Generation
 ----------------
 Image generation models create images from textual descriptions.

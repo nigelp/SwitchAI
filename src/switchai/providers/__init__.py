@@ -10,4 +10,4 @@ from ._google import GoogleChatInputsAdapter, GoogleChatResponseAdapter, GoogleT
 from ._mistral import MistralChatInputsAdapter, MistralChatResponseAdapter, MistralTextEmbeddingResponseAdapter
 from ._voyageai import VoyageAITextEmbeddingResponseAdapter
 from ._deepgram import DeepgramTranscriptionResponseAdapter
-from ._replicate import ReplicateImageGenerationResponseAdapter
+from ._replicate import ReplicateImageGenerationResponseAdapter, ReplicateTranscriptionResponseAdapter

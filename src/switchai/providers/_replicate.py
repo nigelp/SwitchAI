@@ -1,6 +1,11 @@
 from PIL import Image
 
-from ..types import ImageGenerationResponse
+from ..types import ImageGenerationResponse, TranscriptionResponse
+
+
+class ReplicateTranscriptionResponseAdapter(TranscriptionResponse):
+    def __init__(self, response):
+        super().__init__(text=response["transcription"])
 
 
 class ReplicateImageGenerationResponseAdapter(ImageGenerationResponse):
