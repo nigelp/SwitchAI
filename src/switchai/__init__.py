@@ -1,1 +1,1 @@
-from .client import SwitchAI
+from .clients import SwitchAI, Browser

@@ -61,6 +61,8 @@ automatically detect and use the appropriate key for the chosen provider.
 
 ## Example Usage
 
+Here are some examples of how you can use SwitchAI to interact with different AI models:
+
 ### Chat
 
 ```python
@@ -152,6 +154,33 @@ response = client.generate_image("A beautiful sunset over the mountains.")
 
 image = response.images[0]
 image.show()
+```
+
+## SuperClients
+
+SuperClients are high-level interfaces that extend the base `SwitchAI` client to provide additional functionalities.
+
+### Browser
+
+Gives a chat model the ability to access websites.
+
+```python
+
+from switchai import SwitchAI, Browser
+
+client = SwitchAI(provider="openai", model_name="gpt-4o")
+client = Browser(client)
+
+response = client.chat(
+    messages=[
+        {
+          "role": "user", 
+          "content": "Can you summarize the content of this website: https://example.com?"
+        },
+    ]
+)
+
+print(response)
 ```
 
 ## Documentation
