@@ -23,10 +23,12 @@ Here’s a simple example of how to use SwitchAI:
     :maxdepth: 2
     :hidden:
 
+    installation
     models
     api_keys
     chat
     embeddings
     speech_to_text
     image_generation
+    superclients/index
     classes
