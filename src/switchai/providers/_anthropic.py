@@ -1,9 +1,45 @@
 import copy
+import warnings
+from typing import List, Optional
 
-from anthropic import NOT_GIVEN
+from anthropic import Anthropic, NOT_GIVEN
 
+from ..base_client import BaseClient
 from ..types import ChatChoice, ChatResponse, ChatUsage, ChatMessage, ChatToolCall, Function
 from ..utils import is_url, encode_image
+
+
+class AnthropicClientAdapter(BaseClient):
+    def __init__(self, model_name: str, api_key: str):
+        self.model_name = model_name
+        self.client = Anthropic(api_key=api_key)
+
+    def chat(
+        self,
+        messages: List[str],
+        temperature: float = 1.0,
+        max_tokens: Optional[int] = None,
+        n: int = 1,
+        tools: Optional[List] = None,
+    ) -> ChatResponse:
+        if n != 1:
+            warnings.warn(f"Anthropic models ({self.model_name}) only support n=1. Ignoring n={n}.")
+
+        if max_tokens is None:
+            raise ValueError(f"max_tokens must be set for Anthropic models ({self.model_name}).")
+
+        adapted_inputs = AnthropicChatInputsAdapter(messages, tools=tools)
+
+        response = self.client.messages.create(
+            model=self.model_name,
+            messages=adapted_inputs.messages,
+            system=adapted_inputs.system_prompt,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            tools=adapted_inputs.tools,
+        )
+
+        return AnthropicChatResponseAdapter(response)
 
 
 class AnthropicChatInputsAdapter:

@@ -1,5 +1,9 @@
+from typing import Union, List, Optional
+
+import google.generativeai as genai
 import httpx
 
+from ..base_client import BaseClient
 from ..types import (
     ChatChoice,
     ChatResponse,
@@ -12,6 +16,52 @@ from ..types import (
     Embedding,
 )
 from ..utils import is_url, encode_image
+
+
+class GoogleClientAdapter(BaseClient):
+    def __init__(self, model_name: str, api_key: str):
+        self.model_name = model_name
+        # Delay the client creation until the chat method is called
+        # because a system prompt can't be set after the client is created
+        self.client = None
+
+        genai.configure(api_key=api_key)
+
+    def chat(
+        self,
+        messages: List[str],
+        temperature: float = 1.0,
+        max_tokens: Optional[int] = None,
+        n: int = 1,
+        tools: Optional[List] = None,
+    ) -> ChatResponse:
+        adapted_inputs = GoogleChatInputsAdapter(messages, tools)
+
+        if self.client is None:
+            self.client = genai.GenerativeModel(self.model_name, system_instruction=adapted_inputs.system_prompt)
+
+        response = self.client.generate_content(
+            contents=adapted_inputs.messages,
+            generation_config=genai.types.GenerationConfig(
+                candidate_count=n,
+                max_output_tokens=max_tokens,
+                temperature=temperature,
+            ),
+            tools=adapted_inputs.tools,
+        )
+
+        return GoogleChatResponseAdapter(response)
+
+    def embed(self, inputs: Union[str, List[str]]) -> TextEmbeddingResponse:
+        if isinstance(inputs, str):
+            inputs = [inputs]
+
+        response = genai.embed_content(
+            content=inputs,
+            model=self.model_name,
+        )
+
+        return GoogleTextEmbeddingResponseAdapter(response)
 
 
 class GoogleChatInputsAdapter:

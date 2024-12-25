@@ -1,10 +1,12 @@
 import json
 from io import BytesIO
+from typing import List, Optional, Union
 
 import httpx
 from PIL import Image
-from openai import NOT_GIVEN
+from openai import NOT_GIVEN, OpenAI
 
+from ..base_client import BaseClient
 from ..types import (
     ChatChoice,
     ChatResponse,
@@ -21,7 +23,52 @@ from ..types import (
 from ..utils import is_url, encode_image
 
 
-class OpenAIChatInputsAdapter:
+class OpenaiClientAdapter(BaseClient):
+    def __init__(self, model_name: str, api_key: str):
+        self.model_name = model_name
+        self.client = OpenAI(api_key=api_key)
+
+    def chat(
+        self,
+        messages: List[str],
+        temperature: float = 1.0,
+        max_tokens: Optional[int] = None,
+        n: int = 1,
+        tools: Optional[List] = None,
+    ) -> ChatResponse:
+        adapted_inputs = OpenaiChatInputsAdapter(messages, tools)
+
+        response = self.client.chat.completions.create(
+            model=self.model_name,
+            messages=adapted_inputs.messages,
+            temperature=temperature,
+            max_completion_tokens=max_tokens,
+            n=n,
+            tools=adapted_inputs.tools,
+        )
+
+        return OpenaiChatResponseAdapter(response)
+
+    def embed(self, inputs: Union[str, List[str]]) -> TextEmbeddingResponse:
+        response = self.client.embeddings.create(input=inputs, model=self.model_name)
+
+        return OpenaiTextEmbeddingResponseAdapter(response)
+
+    def transcribe(self, audio_path: str, language: Optional[str] = None) -> TranscriptionResponse:
+        with open(audio_path, "rb") as audio_file:
+            response = self.client.audio.transcriptions.create(
+                model=self.model_name, file=audio_file, language=language
+            )
+
+        return OpenaiTranscriptionResponseAdapter(response)
+
+    def generate_image(self, prompt: str, n: int = 1) -> ImageGenerationResponse:
+        response = self.client.images.generate(model=self.model_name, prompt=prompt, n=n)
+
+        return OpenaiImageGenerationResponseAdapter(response)
+
+
+class OpenaiChatInputsAdapter:
     def __init__(self, messages, tools=None):
         self.messages = [self._adapt_message(m) for m in messages]
         self.tools = self._adapt_tools(tools)
@@ -77,7 +124,7 @@ class OpenAIChatInputsAdapter:
         return NOT_GIVEN if tools is None else tools
 
 
-class OpenAIChatResponseAdapter(ChatResponse):
+class OpenaiChatResponseAdapter(ChatResponse):
     def __init__(self, response):
         super().__init__(
             id=response.id,
@@ -108,7 +155,7 @@ class OpenAIChatResponseAdapter(ChatResponse):
         )
 
 
-class OpenAITextEmbeddingResponseAdapter(TextEmbeddingResponse):
+class OpenaiTextEmbeddingResponseAdapter(TextEmbeddingResponse):
     def __init__(self, response):
         super().__init__(
             id=None,
@@ -128,12 +175,12 @@ class OpenAITextEmbeddingResponseAdapter(TextEmbeddingResponse):
         )
 
 
-class OpenAITranscriptionResponseAdapter(TranscriptionResponse):
+class OpenaiTranscriptionResponseAdapter(TranscriptionResponse):
     def __init__(self, response):
         super().__init__(text=response.text)
 
 
-class OpenAIImageGenerationResponseAdapter(ImageGenerationResponse):
+class OpenaiImageGenerationResponseAdapter(ImageGenerationResponse):
     def __init__(self, response):
         images = []
         for image in response.data:

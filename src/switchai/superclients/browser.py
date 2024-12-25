@@ -2,8 +2,9 @@ from typing import List
 
 import httpx
 
-from .. import SwitchAI, BaseClient
-from ...types import ChatResponse
+from .. import SwitchAI
+from ..base_client import BaseClient
+from ..types import ChatResponse
 
 
 def fetch_website(url: str) -> str:
@@ -25,6 +26,13 @@ def fetch_website(url: str) -> str:
 
 
 class Browser(BaseClient):
+    """
+    A superclient that extends a chat SwitchAI client to support websites fetching and analysis.
+
+    Args:
+        client (SwitchAI): A SwitchAI client initialized with a chat model.
+    """
+
     def __init__(self, client: SwitchAI):
         if client.model_category != "chat":
             raise ValueError("The browser client only supports chat models.")
