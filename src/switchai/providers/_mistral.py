@@ -1,6 +1,6 @@
 import copy
 import json
-from typing import Union, List, Optional
+from typing import Union, List, Optional, Generator
 
 from ..base_client import BaseClient
 from ..types import (
@@ -25,24 +25,40 @@ class MistralClientAdapter(BaseClient):
 
     def chat(
         self,
-        messages: List[str],
-        temperature: float = 1.0,
+        messages: List[str | ChatChoice | dict],
+        temperature: Optional[float] = 1.0,
         max_tokens: Optional[int] = None,
-        n: int = 1,
+        n: Optional[int] = 1,
         tools: Optional[List] = None,
-    ) -> ChatResponse:
+        stream: Optional[bool] = False,
+    ) -> Union[ChatResponse, Generator[ChatResponse, None, None]]:
         adapted_inputs = MistralChatInputsAdapter(messages, tools)
 
-        response = self.client.chat.complete(
-            model=self.model_name,
-            messages=adapted_inputs.messages,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            n=n,
-            tools=adapted_inputs.tools,
-        )
+        if stream:
+            response = self.client.chat.stream(
+                model=self.model_name,
+                messages=adapted_inputs.messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                n=n,
+                tools=adapted_inputs.tools,
+            )
+            return self._stream_chat_response(response)
+        else:
+            response = self.client.chat.complete(
+                model=self.model_name,
+                messages=adapted_inputs.messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                n=n,
+                tools=adapted_inputs.tools,
+            )
 
-        return MistralChatResponseAdapter(response)
+            return MistralChatResponseAdapter(response)
+
+    def _stream_chat_response(self, response):
+        for chunk in response:
+            yield MistralChatResponseChunkAdapter(chunk.data)
 
     def embed(self, inputs: Union[str, List[str]]) -> TextEmbeddingResponse:
         response = self.client.embeddings.create(
@@ -136,6 +152,43 @@ class MistralChatResponseAdapter(ChatResponse):
                         for tool in choice.message.tool_calls
                     ]
                     if choice.message.tool_calls is not None
+                    else None,
+                    finish_reason=choice.finish_reason,
+                )
+                for choice in response.choices
+            ],
+        )
+
+
+class MistralChatResponseChunkAdapter(ChatResponse):
+    def __init__(self, response):
+        print(response.choices[0].delta)
+        super().__init__(
+            id=response.id,
+            object=response.object,
+            model=response.model,
+            usage=ChatUsage(
+                input_tokens=response.usage.prompt_tokens,
+                output_tokens=response.usage.completion_tokens,
+                total_tokens=response.usage.total_tokens,
+            )
+            if response.usage is not None
+            else None,
+            choices=[
+                ChatChoice(
+                    index=choice.index,
+                    message=ChatMessage(
+                        role=choice.delta.role if isinstance(choice.delta.role, str) else None,
+                        content=choice.delta.content,
+                    ),
+                    tool_calls=[
+                        ChatToolCall(
+                            id=tool.id,
+                            function=Function(name=tool.function.name, arguments=json.loads(tool.function.arguments)),
+                        )
+                        for tool in choice.delta.tool_calls
+                    ]
+                    if choice.delta.tool_calls is not None
                     else None,
                     finish_reason=choice.finish_reason,
                 )

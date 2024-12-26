@@ -1,4 +1,4 @@
-from typing import Union, List, Optional
+from typing import Union, List, Optional, Generator
 
 import google.generativeai as genai
 import httpx
@@ -29,12 +29,13 @@ class GoogleClientAdapter(BaseClient):
 
     def chat(
         self,
-        messages: List[str],
-        temperature: float = 1.0,
+        messages: List[str | ChatChoice | dict],
+        temperature: Optional[float] = 1.0,
         max_tokens: Optional[int] = None,
-        n: int = 1,
+        n: Optional[int] = 1,
         tools: Optional[List] = None,
-    ) -> ChatResponse:
+        stream: Optional[bool] = False,
+    ) -> Union[ChatResponse, Generator[ChatResponse, None, None]]:
         adapted_inputs = GoogleChatInputsAdapter(messages, tools)
 
         if self.client is None:
@@ -48,9 +49,17 @@ class GoogleClientAdapter(BaseClient):
                 temperature=temperature,
             ),
             tools=adapted_inputs.tools,
+            stream=stream,
         )
 
-        return GoogleChatResponseAdapter(response)
+        if stream:
+            return self._stream_chat_response(response)
+        else:
+            return GoogleChatResponseAdapter(response)
+
+    def _stream_chat_response(self, response):
+        for chunk in response:
+            yield GoogleChatResponseChunkAdapter(chunk)
 
     def embed(self, inputs: Union[str, List[str]]) -> TextEmbeddingResponse:
         if isinstance(inputs, str):
@@ -157,6 +166,36 @@ class GoogleChatInputsAdapter:
 
 
 class GoogleChatResponseAdapter(ChatResponse):
+    def __init__(self, response):
+        super().__init__(
+            id=None,
+            object=None,
+            model=None,
+            usage=ChatUsage(
+                input_tokens=response.usage_metadata.prompt_token_count,
+                output_tokens=response.usage_metadata.candidates_token_count,
+                total_tokens=response.usage_metadata.total_token_count,
+            ),
+            choices=[
+                ChatChoice(
+                    index=choice.index,
+                    message=ChatMessage(role="assistant", content=choice.content.parts[0].text),
+                    tool_calls=[
+                        ChatToolCall(
+                            id=None,
+                            function=Function(name=part.function_call.name, arguments=dict(part.function_call.args)),
+                        )
+                        for part in choice.content.parts
+                        if "function_call" in part
+                    ],
+                    finish_reason=choice.finish_reason.name.lower(),
+                )
+                for choice in response.candidates
+            ],
+        )
+
+
+class GoogleChatResponseChunkAdapter(ChatResponse):
     def __init__(self, response):
         super().__init__(
             id=None,

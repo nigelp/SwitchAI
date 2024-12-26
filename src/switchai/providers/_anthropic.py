@@ -1,6 +1,6 @@
 import copy
 import warnings
-from typing import List, Optional
+from typing import List, Optional, Generator, Union
 
 from anthropic import Anthropic, NOT_GIVEN
 
@@ -16,12 +16,13 @@ class AnthropicClientAdapter(BaseClient):
 
     def chat(
         self,
-        messages: List[str],
-        temperature: float = 1.0,
+        messages: List[str | ChatChoice | dict],
+        temperature: Optional[float] = 1.0,
         max_tokens: Optional[int] = None,
-        n: int = 1,
+        n: Optional[int] = 1,
         tools: Optional[List] = None,
-    ) -> ChatResponse:
+        stream: Optional[bool] = False,
+    ) -> Union[ChatResponse, Generator[ChatResponse, None, None]]:
         if n != 1:
             warnings.warn(f"Anthropic models ({self.model_name}) only support n=1. Ignoring n={n}.")
 
@@ -37,9 +38,19 @@ class AnthropicClientAdapter(BaseClient):
             temperature=temperature,
             max_tokens=max_tokens,
             tools=adapted_inputs.tools,
+            stream=stream,
         )
 
-        return AnthropicChatResponseAdapter(response)
+        if stream:
+            return self._stream_chat_response(response)
+        else:
+            return AnthropicChatResponseAdapter(response)
+
+    def _stream_chat_response(self, response):
+        for chunk in response:
+            if chunk.type in ["message_start", "content_block_stop", "content_block_start", "message_stop"]:
+                continue
+            yield AnthropicChatResponseChunkAdapter(chunk)
 
 
 class AnthropicChatInputsAdapter:
@@ -157,6 +168,26 @@ class AnthropicChatResponseAdapter(ChatResponse):
                     if len(response.content) > 1
                     else None,
                     finish_reason=response.stop_reason,
+                )
+            ],
+        )
+
+
+class AnthropicChatResponseChunkAdapter(ChatResponse):
+    def __init__(self, response):
+        super().__init__(
+            id=None,
+            object=None,
+            model=None,
+            usage=ChatUsage(output_tokens=response.usage.output_tokens) if getattr(response, "usage", None) else None,
+            choices=[
+                ChatChoice(
+                    index=0,
+                    message=ChatMessage(content=response.delta.text)
+                    if getattr(response.delta, "text", None)
+                    else None,
+                    tool_calls=None,
+                    finish_reason=response.delta.stop_reason if getattr(response.delta, "stop_reason", None) else None,
                 )
             ],
         )

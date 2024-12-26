@@ -1,10 +1,10 @@
-from typing import List
+from typing import List, Optional, Generator, Union
 
 import httpx
 
 from .. import SwitchAI
 from ..base_client import BaseClient
-from ..types import ChatResponse
+from ..types import ChatResponse, ChatChoice
 
 
 def fetch_website(url: str) -> str:
@@ -30,7 +30,7 @@ class Browser(BaseClient):
     A superclient that extends a chat SwitchAI client to support websites fetching and analysis.
 
     Args:
-        client (SwitchAI): A SwitchAI client initialized with a chat model.
+        client: A SwitchAI client initialized with a chat model.
     """
 
     def __init__(self, client: SwitchAI):
@@ -40,8 +40,14 @@ class Browser(BaseClient):
         self.client = client
 
     def chat(
-        self, messages, temperature: float = 1.0, max_tokens: int | None = None, n: int = 1, tools: List = None
-    ) -> ChatResponse:
+        self,
+        messages: List[str | ChatChoice | dict],
+        temperature: Optional[float] = 1.0,
+        max_tokens: Optional[int] = None,
+        n: Optional[int] = 1,
+        tools: Optional[List] = None,
+        stream: Optional[bool] = False,
+    ) -> Union[ChatResponse, Generator[ChatResponse, None, None]]:
         if tools is None:
             tools = []
         if len(tools) > 0:

@@ -1,6 +1,6 @@
 import importlib
 import os
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Generator
 
 from .base_client import BaseClient
 from .constants import SUPPORTED_MODELS, API_KEYS_NAMING
@@ -12,9 +12,9 @@ class SwitchAI(BaseClient):
     The SwitchAI client class.
 
     Args:
-            provider (str): The name of the provider to use.
-            model_name (str): The name of the model to use.
-            api_key (str, optional): The API key to use, if not set it will be read from the environment variable. Defaults to None.
+            provider: The name of the provider to use.
+            model_name: The name of the model to use.
+            api_key: The API key to use, if not set it will be read from the environment variable. Defaults to None.
     """
 
     def __init__(self, provider: str, model_name: str, api_key: Optional[str] = None):
@@ -67,14 +67,15 @@ class SwitchAI(BaseClient):
     def chat(
         self,
         messages: List[str | ChatChoice | dict],
-        temperature: float = 1.0,
+        temperature: Optional[float] = 1.0,
         max_tokens: Optional[int] = None,
-        n: int = 1,
+        n: Optional[int] = 1,
         tools: Optional[List] = None,
-    ) -> ChatResponse:
+        stream: Optional[bool] = False,
+    ) -> Union[ChatResponse, Generator[ChatResponse, None, None]]:
         if self.model_category != "chat":
             raise ValueError(f"Model '{self.model_name}' is not a chat model.")
-        return self.client.chat(messages, temperature, max_tokens, n, tools)
+        return self.client.chat(messages, temperature, max_tokens, n, tools, stream)
 
     def embed(self, inputs: Union[str, List[str]]) -> TextEmbeddingResponse:
         if self.model_category != "embed":

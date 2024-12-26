@@ -13,7 +13,7 @@ class ReplicateClientAdapter(BaseClient):
         self.model_name = model_name
         self.client = Client(api_token=api_key)
 
-    def generate_image(self, prompt: str, n: int = 1) -> ImageGenerationResponse:
+    def generate_image(self, prompt: str, n: Optional[int] = 1) -> ImageGenerationResponse:
         latest_version_id = self.client.models.get(self.model_name).latest_version.id
         response = self.client.run(
             ref=f"{self.model_name}:{latest_version_id}",
