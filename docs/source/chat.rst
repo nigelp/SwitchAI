@@ -28,6 +28,31 @@ Here's an example of how to use it:
         ]
     )
 
+    print(response)
+
+Streaming
+^^^^^^^^^
+
+Streaming allows you to get responses from the model as they are generated, instead of waiting for the entire response to be generated.
+
+Here's an example of how to use it:
+
+.. code:: python
+
+    from switchai import SwitchAI
+
+    client = SwitchAI(provider="openai", model_name="gpt-4")
+    response = client.chat(
+        messages=[
+            {"role": "system", "content": "You are a friendly assistant."},
+            {"role": "user", "content": "Hello, how are you?"}
+        ],
+        stream=True
+    )
+
+    for chunk in response:
+        print(chunk)
+
 Chat Messages
 -------------
 

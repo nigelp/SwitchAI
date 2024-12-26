@@ -21,3 +21,7 @@ extensions = [
 
 # Show only class names.
 add_module_names = False
+
+# Keep the type hints outside the function signature, moving them to the
+# descriptions of the relevant function/methods.
+autodoc_typehints = "description"
