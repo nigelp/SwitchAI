@@ -9,6 +9,11 @@ from ..types import ChatChoice, ChatResponse, ChatUsage, ChatMessage, ChatToolCa
 from ..utils import is_url, encode_image
 
 
+SUPPORTED_MODELS = {"chat": ["claude-3-5-sonnet-latest", "claude-3-5-haiku-latest", "claude-3-opus-latest"]}
+
+API_KEY_NAMING = "ANTHROPIC_API_KEY"
+
+
 class AnthropicClientAdapter(BaseClient):
     def __init__(self, model_name: str, api_key: str):
         self.model_name = model_name

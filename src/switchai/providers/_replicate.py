@@ -8,6 +8,14 @@ from ..types import ImageGenerationResponse, TranscriptionResponse
 from replicate.client import Client
 
 
+SUPPORTED_MODELS = {
+    "transcribe": ["openai/whisper"],
+    "generate_image": ["black-forest-labs/flux-schnell", "stability-ai/sdxl"],
+}
+
+API_KEY_NAMING = "REPLICATE_API_TOKEN"
+
+
 class ReplicateClientAdapter(BaseClient):
     def __init__(self, model_name: str, api_key: str):
         self.model_name = model_name

@@ -6,6 +6,21 @@ from ..base_client import BaseClient
 from ..types import TextEmbeddingResponse, EmbeddingUsage, Embedding
 
 
+SUPPORTED_MODELS = {
+    "embed": [
+        "voyage-3-large",
+        "voyage-3",
+        "voyage-3-lite",
+        "voyage-code-3",
+        "voyage-finance-2",
+        "voyage-law-2",
+        "voyage-code-2",
+    ]
+}
+
+API_KEY_NAMING = "VOYAGE_API_KEY"
+
+
 class VoyageaiClientAdapter(BaseClient):
     def __init__(self, model_name: str, api_key: str):
         self.model_name = model_name

@@ -18,6 +18,14 @@ from ..types import (
 from ..utils import is_url, encode_image
 
 
+SUPPORTED_MODELS = {
+    "chat": ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.5-flash-8b"],
+    "embed": ["models/text-embedding-004", "models/embedding-001"],
+}
+
+API_KEY_NAMING = "GEMINI_API_KEY"
+
+
 class GoogleClientAdapter(BaseClient):
     def __init__(self, model_name: str, api_key: str):
         self.model_name = model_name

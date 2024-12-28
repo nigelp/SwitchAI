@@ -18,6 +18,22 @@ from ..utils import encode_image, is_url
 from mistralai import Mistral
 
 
+SUPPORTED_MODELS = {
+    "chat": [
+        "mistral-large-latest",
+        "mistral-small-latest",
+        "pixtral-large-latest",
+        "pixtral-12b",
+        "open-mistral-7b",
+        "open-mixtral-8x7b",
+        "open-mixtral-8x22b",
+    ],
+    "embed": ["mistral-embed"],
+}
+
+API_KEY_NAMING = "MISTRAL_API_KEY"
+
+
 class MistralClientAdapter(BaseClient):
     def __init__(self, model_name: str, api_key: str):
         self.model_name = model_name

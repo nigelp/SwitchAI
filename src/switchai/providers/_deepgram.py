@@ -6,6 +6,23 @@ from ..base_client import BaseClient
 from ..types import TranscriptionResponse
 
 
+SUPPORTED_MODELS = {
+    "transcribe": [
+        "nova-2",
+        "nova",
+        "enhanced",
+        "base",
+        "whisper-tiny",
+        "whisper-small",
+        "whisper-base",
+        "whisper-medium",
+        "whisper-large",
+    ]
+}
+
+API_KEY_NAMING = "DEEPGRAM_API_KEY"
+
+
 class DeepgramClientAdapter(BaseClient):
     def __init__(self, model_name: str, api_key: str):
         self.model_name = model_name

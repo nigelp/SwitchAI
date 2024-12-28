@@ -1,9 +1,9 @@
+import glob
 import importlib
 import os
 from typing import List, Optional, Union, Generator
 
 from .base_client import BaseClient
-from .constants import SUPPORTED_MODELS, API_KEYS_NAMING
 from .types import ChatResponse, TextEmbeddingResponse, TranscriptionResponse, ImageGenerationResponse, ChatChoice
 
 
@@ -21,31 +21,44 @@ class SwitchAI(BaseClient):
         self.provider = provider.lower()
         self.model_name = model_name
 
-        self._validate_provider()
-        self._validate_model()
+        self.client, self.model_category = self._get_provider_client(api_key)
 
-        self.model_category = self._get_model_category(model_name)
+    def _get_provider_client(self, api_key: Optional[str]) -> tuple[BaseClient, str]:
+        # Get all provider files matching the pattern _*.py
+        provider_files = glob.glob(os.path.join(os.path.dirname(__file__), "providers", "_*.py"))
+        provider_modules = [os.path.basename(f)[1:-3] for f in provider_files]
+        provider_modules.remove("_init__")
 
-        api_key = self._get_api_key(api_key)
-
-        self.client = self._create_client(self.provider, self.model_name, api_key)
-
-    def _validate_provider(self):
-        if self.provider not in SUPPORTED_MODELS:
-            supported_providers = ", ".join(SUPPORTED_MODELS.keys())
+        # Check if the specified provider is supported
+        if self.provider not in provider_modules:
+            supported_providers = ", ".join(provider_modules)
             raise ValueError(
                 f"Provider '{self.provider}' is not supported. Supported providers are: {supported_providers}."
             )
 
-    def _validate_model(self):
-        provider_models = SUPPORTED_MODELS[self.provider]
-        model_supported = any(self.model_name in models for models in provider_models.values())
+        # Import the provider module
+        provider_module = importlib.import_module(f"switchai.providers._{self.provider}")
+
+        model_supported = False
+        model_category = None
+        # Check if the model is supported by the specified provider and identify the category
+        for category, models in provider_module.SUPPORTED_MODELS.items():
+            if self.model_name in models:
+                model_supported = True
+                model_category = category
+                break
+
         if not model_supported:
+            # Find alternative providers that support the model
             alternative_providers = [
-                p
-                for p, models in SUPPORTED_MODELS.items()
-                if any(self.model_name in m_list for m_list in models.values())
+                provider
+                for provider in provider_modules
+                if any(
+                    self.model_name in models
+                    for models in importlib.import_module(f"switchai.providers._{provider}").SUPPORTED_MODELS.values()
+                )
             ]
+
             if alternative_providers:
                 alternatives = ", ".join(alternative_providers)
                 raise ValueError(
@@ -55,23 +68,29 @@ class SwitchAI(BaseClient):
             else:
                 raise ValueError(f"Model '{self.model_name}' is not supported by any provider.")
 
-    def _get_api_key(self, api_key: str | None) -> str:
+        # Retrieve the API key from the environment if not provided
         if api_key is None:
-            api_key = os.environ.get(API_KEYS_NAMING[self.provider])
+            api_key = os.environ.get(provider_module.API_KEY_NAMING)
         if api_key is None:
             raise ValueError(
-                f"The api_key client option must be set either by passing api_key to the client or by setting the {API_KEYS_NAMING[self.provider]} environment variable"
+                f"The api_key client option must be set either by passing api_key to the client or by setting the {provider_module.API_KEY_NAMING} environment variable."
             )
-        return api_key
+
+        # Construct the client class name and get the class from the provider module
+        class_name = f"{self.provider.capitalize()}ClientAdapter"
+        client_class = getattr(provider_module, class_name)
+
+        # Return an instance of the client class and the model category
+        return client_class(self.model_name, api_key), model_category
 
     def chat(
-        self,
-        messages: List[str | ChatChoice | dict],
-        temperature: Optional[float] = 1.0,
-        max_tokens: Optional[int] = None,
-        n: Optional[int] = 1,
-        tools: Optional[List] = None,
-        stream: Optional[bool] = False,
+            self,
+            messages: List[str | ChatChoice | dict],
+            temperature: Optional[float] = 1.0,
+            max_tokens: Optional[int] = None,
+            n: Optional[int] = 1,
+            tools: Optional[List] = None,
+            stream: Optional[bool] = False,
     ) -> Union[ChatResponse, Generator[ChatResponse, None, None]]:
         if self.model_category != "chat":
             raise ValueError(f"Model '{self.model_name}' is not a chat model.")
@@ -91,21 +110,3 @@ class SwitchAI(BaseClient):
         if self.model_category != "generate_image":
             raise ValueError(f"Model '{self.model_name}' is not an image generation model.")
         return self.client.generate_image(prompt, n)
-
-    @staticmethod
-    def _create_client(provider: str, model_name: str, api_key: str):
-        # Dynamically import the adapter module based on the provider name
-        module_name = f"switchai.providers._{provider}"
-        module = importlib.import_module(module_name)
-
-        class_name = f"{provider.capitalize()}ClientAdapter"
-        client_class = getattr(module, class_name)
-
-        return client_class(model_name, api_key)
-
-    @staticmethod
-    def _get_model_category(model_name: str) -> str:
-        for categories in SUPPORTED_MODELS.values():
-            for category, model_list in categories.items():
-                if model_name in model_list:
-                    return category

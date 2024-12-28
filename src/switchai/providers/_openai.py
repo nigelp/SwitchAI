@@ -7,6 +7,7 @@ from PIL import Image
 from openai import NOT_GIVEN, OpenAI
 
 from ..base_client import BaseClient
+from ..constants import API_KEYS_NAMING
 from ..types import (
     ChatChoice,
     ChatResponse,
@@ -21,6 +22,16 @@ from ..types import (
     ImageGenerationResponse,
 )
 from ..utils import is_url, encode_image
+
+
+SUPPORTED_MODELS = {
+    "chat": ["gpt-4o-mini", "gpt-4o", "o1-preview", "o1-mini", "gpt-4"],
+    "embed": ["text-embedding-ada-002", "text-embedding-3-small", "text-embedding-3-large"],
+    "transcribe": ["whisper-1"],
+    "generate_image": ["dall-e-3", "dall-e-2"],
+}
+
+API_KEY_NAMING = "OPENAI_API_KEY"
 
 
 class OpenaiClientAdapter(BaseClient):
