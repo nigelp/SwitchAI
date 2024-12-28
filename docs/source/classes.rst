@@ -33,7 +33,7 @@ Classes Documentation
     :exclude-members: model_config
 
 
-.. autoclass:: switchai.types.TextEmbeddingResponse
+.. autoclass:: switchai.types.EmbeddingResponse
     :members:
     :exclude-members: model_config
 
