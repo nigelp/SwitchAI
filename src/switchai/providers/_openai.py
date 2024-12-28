@@ -3,7 +3,7 @@ from io import BytesIO
 from typing import List, Optional, Union, Generator
 
 import httpx
-from PIL import Image
+from PIL.Image import Image
 from openai import NOT_GIVEN, OpenAI
 
 from ..base_client import BaseClient
@@ -14,17 +14,17 @@ from ..types import (
     ChatMessage,
     ChatToolCall,
     Function,
-    TextEmbeddingResponse,
+    EmbeddingResponse,
     EmbeddingUsage,
     Embedding,
     TranscriptionResponse,
     ImageGenerationResponse,
 )
-from ..utils import is_url, encode_image
+from ..utils import is_url, encode_image, contains_image
 
 SUPPORTED_MODELS = {
     "chat": ["gpt-4o-mini", "gpt-4o", "o1-preview", "o1-mini", "gpt-4"],
-    "embed": ["text-embedding-ada-002", "text-embedding-3-small", "text-embedding-3-large"],
+    "embed": {"text": ["text-embedding-ada-002", "text-embedding-3-small", "text-embedding-3-large"]},
     "transcribe": ["whisper-1"],
     "generate_image": ["dall-e-3", "dall-e-2"],
 }
@@ -67,7 +67,14 @@ class OpenaiClientAdapter(BaseClient):
         for chunk in response:
             yield OpenaiChatResponseChunkAdapter(chunk)
 
-    def embed(self, inputs: Union[str, List[str]]) -> TextEmbeddingResponse:
+    def embed(self, inputs: Union[str, Image, List[Union[str, Image]]]) -> EmbeddingResponse:
+        if contains_image(inputs):
+            if (
+                "text_and_images" not in SUPPORTED_MODELS["embed"]
+                or self.model_name not in SUPPORTED_MODELS["embed"]["text_and_images"]
+            ):
+                raise ValueError(f"Model {self.model_name} does not support images.")
+
         response = self.client.embeddings.create(input=inputs, model=self.model_name)
 
         return OpenaiTextEmbeddingResponseAdapter(response)
@@ -206,7 +213,7 @@ class OpenaiChatResponseChunkAdapter(ChatResponse):
         )
 
 
-class OpenaiTextEmbeddingResponseAdapter(TextEmbeddingResponse):
+class OpenaiTextEmbeddingResponseAdapter(EmbeddingResponse):
     def __init__(self, response):
         super().__init__(
             id=None,

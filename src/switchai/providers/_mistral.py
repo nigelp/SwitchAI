@@ -2,6 +2,9 @@ import copy
 import json
 from typing import Union, List, Optional, Generator
 
+from PIL.Image import Image
+from mistralai import Mistral
+
 from ..base_client import BaseClient
 from ..types import (
     ChatChoice,
@@ -10,13 +13,11 @@ from ..types import (
     ChatMessage,
     ChatToolCall,
     Function,
-    TextEmbeddingResponse,
+    EmbeddingResponse,
     EmbeddingUsage,
     Embedding,
 )
-from ..utils import encode_image, is_url
-from mistralai import Mistral
-
+from ..utils import encode_image, is_url, contains_image
 
 SUPPORTED_MODELS = {
     "chat": [
@@ -28,7 +29,7 @@ SUPPORTED_MODELS = {
         "open-mixtral-8x7b",
         "open-mixtral-8x22b",
     ],
-    "embed": ["mistral-embed"],
+    "embed": {"text": ["mistral-embed"]},
 }
 
 API_KEY_NAMING = "MISTRAL_API_KEY"
@@ -76,7 +77,14 @@ class MistralClientAdapter(BaseClient):
         for chunk in response:
             yield MistralChatResponseChunkAdapter(chunk.data)
 
-    def embed(self, inputs: Union[str, List[str]]) -> TextEmbeddingResponse:
+    def embed(self, inputs: Union[str, Image, List[Union[str, Image]]]) -> EmbeddingResponse:
+        if contains_image(inputs):
+            if (
+                "text_and_images" not in SUPPORTED_MODELS["embed"]
+                or self.model_name not in SUPPORTED_MODELS["embed"]["text_and_images"]
+            ):
+                raise ValueError(f"Model {self.model_name} does not support images.")
+
         response = self.client.embeddings.create(
             model=self.model_name,
             inputs=inputs,
@@ -213,7 +221,7 @@ class MistralChatResponseChunkAdapter(ChatResponse):
         )
 
 
-class MistralTextEmbeddingResponseAdapter(TextEmbeddingResponse):
+class MistralTextEmbeddingResponseAdapter(EmbeddingResponse):
     def __init__(self, response):
         super().__init__(
             id=response.id,

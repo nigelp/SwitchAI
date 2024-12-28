@@ -3,8 +3,10 @@ import importlib
 import os
 from typing import List, Optional, Union, Generator
 
+from PIL.Image import Image
+
 from .base_client import BaseClient
-from .types import ChatResponse, TextEmbeddingResponse, TranscriptionResponse, ImageGenerationResponse, ChatChoice
+from .types import ChatResponse, TranscriptionResponse, ImageGenerationResponse, ChatChoice, EmbeddingResponse
 
 
 class SwitchAI(BaseClient):
@@ -42,10 +44,21 @@ class SwitchAI(BaseClient):
         model_supported = False
         model_category = None
         # Check if the model is supported by the specified provider and identify the category
-        for category, models in provider_module.SUPPORTED_MODELS.items():
-            if self.model_name in models:
-                model_supported = True
-                model_category = category
+        for category, models_or_subcategories in provider_module.SUPPORTED_MODELS.items():
+            if isinstance(models_or_subcategories, dict):
+                # If subcategories are present, iterate through them
+                for subcategory, models in models_or_subcategories.items():
+                    if self.model_name in models:
+                        model_supported = True
+                        model_category = category
+                        break
+            else:
+                # If no subcategories, models_or_subcategories is the list of models
+                if self.model_name in models_or_subcategories:
+                    model_supported = True
+                    model_category = category
+                    break
+            if model_supported:
                 break
 
         if not model_supported:
@@ -55,7 +68,10 @@ class SwitchAI(BaseClient):
                 for provider in provider_modules
                 if any(
                     self.model_name in models
-                    for models in importlib.import_module(f"switchai.providers._{provider}").SUPPORTED_MODELS.values()
+                    for models_or_dict in importlib.import_module(
+                        f"switchai.providers._{provider}"
+                    ).SUPPORTED_MODELS.values()
+                    for models in (models_or_dict if isinstance(models_or_dict, list) else models_or_dict.values())
                 )
             ]
 
@@ -84,19 +100,19 @@ class SwitchAI(BaseClient):
         return client_class(self.model_name, api_key), model_category
 
     def chat(
-            self,
-            messages: List[str | ChatChoice | dict],
-            temperature: Optional[float] = 1.0,
-            max_tokens: Optional[int] = None,
-            n: Optional[int] = 1,
-            tools: Optional[List] = None,
-            stream: Optional[bool] = False,
+        self,
+        messages: List[str | ChatChoice | dict],
+        temperature: Optional[float] = 1.0,
+        max_tokens: Optional[int] = None,
+        n: Optional[int] = 1,
+        tools: Optional[List] = None,
+        stream: Optional[bool] = False,
     ) -> Union[ChatResponse, Generator[ChatResponse, None, None]]:
         if self.model_category != "chat":
             raise ValueError(f"Model '{self.model_name}' is not a chat model.")
         return self.client.chat(messages, temperature, max_tokens, n, tools, stream)
 
-    def embed(self, inputs: Union[str, List[str]]) -> TextEmbeddingResponse:
+    def embed(self, inputs: Union[str, Image, List[Union[str, Image]]]) -> EmbeddingResponse:
         if self.model_category != "embed":
             raise ValueError(f"Model '{self.model_name}' is not an embedding model.")
         return self.client.embed(inputs)

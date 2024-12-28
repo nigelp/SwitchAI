@@ -122,7 +122,7 @@ class EmbeddingUsage(BaseModel):
     total_tokens: Optional[int] = None
 
 
-class TextEmbeddingResponse(BaseModel):
+class EmbeddingResponse(BaseModel):
     """
     Represents an embedding response from the model, based on the provided input.
 

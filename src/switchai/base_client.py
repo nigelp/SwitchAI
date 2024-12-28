@@ -1,12 +1,14 @@
 from abc import ABC
 from typing import Union, List, Optional, Generator
 
+from PIL.Image import Image
+
 from switchai.types import (
     ChatResponse,
-    TextEmbeddingResponse,
     TranscriptionResponse,
     ImageGenerationResponse,
     ChatChoice,
+    EmbeddingResponse,
 )
 
 
@@ -36,7 +38,7 @@ class BaseClient(ABC):
         """
         pass
 
-    def embed(self, inputs: Union[str, List[str]]) -> TextEmbeddingResponse:
+    def embed(self, inputs: Union[str, Image, List[Union[str, Image]]]) -> EmbeddingResponse:
         """
         Embeds the input text using the AI model.
 
