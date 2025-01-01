@@ -21,11 +21,11 @@ class ImageRetriever:
     """
 
     def __init__(
-            self,
-            client: SwitchAI,
-            images_folder_path: str,
-            embeddings_cache_path: Optional[str] = None,
-            batch_size: Optional[int] = 32,
+        self,
+        client: SwitchAI,
+        images_folder_path: str,
+        embeddings_cache_path: Optional[str] = None,
+        batch_size: Optional[int] = 32,
     ):
         module = importlib.import_module(f"switchai.providers._{client.provider}")
         supported_models = module.SUPPORTED_MODELS["embed"]["text_and_images"]
@@ -52,7 +52,7 @@ class ImageRetriever:
 
         # Embed the images
         for i in range(0, len(images_to_embed), batch_size):
-            batch = images_to_embed[i: i + batch_size]
+            batch = images_to_embed[i : i + batch_size]
 
             pil_images = [Image.open(image_path) for image_path in batch]
 
@@ -66,7 +66,7 @@ class ImageRetriever:
         embeddings_cache_path.write_text(json.dumps(self.embeddings))
 
     def retrieve_images(
-            self, query: Union[str, Image.Image], similarity_metric: str = "cosine", threshold: float = 0.5
+        self, query: Union[str, Image.Image], similarity_metric: str = "cosine", threshold: float = 0.5
     ) -> Dict[str, float]:
         """
         Retrieve images similar to the query image or text.
