@@ -183,6 +183,21 @@ response = client.chat(
 print(response)
 ```
 
+### ImageRetriever
+
+Retrieves images from a folder of images based on a query.
+
+```python
+
+from switchai import SwitchAI, ImageRetriever
+
+client = SwitchAI(provider="VoyageAI", model_name="voyage-multimodal-3")
+image_retriever = ImageRetriever(client, images_folder_path="files/images")
+
+results = image_retriever.retrieve_images("An orange cat in a green field.")
+print(results)
+```
+
 ## Documentation
 
 For full documentation, visit [SwitchAI Documentation](https://switchai.readthedocs.io/).
