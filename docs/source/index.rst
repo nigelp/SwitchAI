@@ -31,4 +31,4 @@ Here’s a simple example of how to use SwitchAI:
     speech_to_text
     image_generation
     superclients/index
-    classes
+    class_reference

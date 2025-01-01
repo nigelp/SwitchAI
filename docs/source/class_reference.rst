@@ -1,5 +1,5 @@
-Classes Documentation
-=====================
+Class Reference
+===============
 
 .. autoclass:: switchai.SwitchAI
    :members:
@@ -52,5 +52,14 @@ Classes Documentation
 
 
 .. autoclass:: switchai.types.ImageGenerationResponse
+    :members:
+    :exclude-members: model_config
+
+
+.. autoclass:: switchai.Browser
+    :members:
+    :exclude-members: model_config
+
+.. autoclass:: switchai.ImageRetriever
     :members:
     :exclude-members: model_config
