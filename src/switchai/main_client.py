@@ -1,9 +1,10 @@
 import glob
 import importlib
 import os
-from typing import List, Optional, Union, Generator
+from typing import List, Optional, Union, Generator, Type
 
 from PIL.Image import Image
+from pydantic import BaseModel
 
 from .base_client import BaseClient
 from .types import ChatResponse, TranscriptionResponse, ImageGenerationResponse, ChatChoice, EmbeddingResponse
@@ -106,11 +107,12 @@ class SwitchAI(BaseClient):
         max_tokens: Optional[int] = None,
         n: Optional[int] = 1,
         tools: Optional[List] = None,
+        response_format: Optional[Type[BaseModel]] = None,
         stream: Optional[bool] = False,
     ) -> Union[ChatResponse, Generator[ChatResponse, None, None]]:
         if self.model_category != "chat":
             raise ValueError(f"Model '{self.model_name}' is not a chat model.")
-        return self.client.chat(messages, temperature, max_tokens, n, tools, stream)
+        return self.client.chat(messages, temperature, max_tokens, n, tools, response_format, stream)
 
     def embed(self, inputs: Union[str, Image, List[Union[str, Image]]]) -> EmbeddingResponse:
         if self.model_category != "embed":

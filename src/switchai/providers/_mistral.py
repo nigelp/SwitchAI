@@ -1,8 +1,9 @@
 import copy
 import json
-from typing import Union, List, Optional, Generator
+from typing import Union, List, Optional, Generator, Type
 
 from PIL.Image import Image
+from anthropic import BaseModel
 from mistralai import Mistral
 
 from ..base_client import BaseClient
@@ -17,7 +18,7 @@ from ..types import (
     EmbeddingUsage,
     Embedding,
 )
-from ..utils import encode_image, is_url, contains_image
+from ..utils import encode_image, is_url, contains_image, inline_defs
 
 SUPPORTED_MODELS = {
     "chat": [
@@ -47,9 +48,10 @@ class MistralClientAdapter(BaseClient):
         max_tokens: Optional[int] = None,
         n: Optional[int] = 1,
         tools: Optional[List] = None,
+        response_format: Optional[Type[BaseModel]] = None,
         stream: Optional[bool] = False,
     ) -> Union[ChatResponse, Generator[ChatResponse, None, None]]:
-        adapted_inputs = MistralChatInputsAdapter(messages, tools)
+        adapted_inputs = MistralChatInputsAdapter(messages, tools, response_format)
 
         if stream:
             response = self.client.chat.stream(
@@ -59,6 +61,11 @@ class MistralClientAdapter(BaseClient):
                 max_tokens=max_tokens,
                 n=n,
                 tools=adapted_inputs.tools,
+                response_format={
+                    "type": "json_object",
+                }
+                if response_format is not None
+                else None,
             )
             return self._stream_chat_response(response)
         else:
@@ -69,6 +76,11 @@ class MistralClientAdapter(BaseClient):
                 max_tokens=max_tokens,
                 n=n,
                 tools=adapted_inputs.tools,
+                response_format={
+                    "type": "json_object",
+                }
+                if response_format is not None
+                else None,
             )
 
             return MistralChatResponseAdapter(response)
@@ -94,8 +106,20 @@ class MistralClientAdapter(BaseClient):
 
 
 class MistralChatInputsAdapter:
-    def __init__(self, messages, tools=None):
+    def __init__(self, messages, tools=None, response_format=None):
         self.messages = [self._adapt_message(m) for m in messages]
+
+        # Mistral don't support structured outputs out of the box, so prompting is needed
+        if response_format is not None:
+            if self.messages[0]["role"] != "system":
+                self.messages.insert(0, {"role": "system", "content": ""})
+
+            self.messages[0]["content"] = (
+                f'self.messages[0]["content"]\n'
+                f"Return a short JSON object with the following schema: \n"
+                f"{self._adapt_response_format(response_format)}"
+            )
+
         self.tools = tools
 
     def _adapt_message(self, message):
@@ -151,6 +175,12 @@ class MistralChatInputsAdapter:
             return {"type": "image_url", "image_url": {"url": image}}
         base64_image = encode_image(image)
         return {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
+
+    def _adapt_response_format(self, response_format):
+        response_format = response_format.model_json_schema()
+        response_format = inline_defs(response_format)
+
+        return response_format
 
 
 class MistralChatResponseAdapter(ChatResponse):

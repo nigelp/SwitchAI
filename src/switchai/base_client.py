@@ -1,7 +1,8 @@
 from abc import ABC
-from typing import Union, List, Optional, Generator
+from typing import Union, List, Optional, Generator, Type
 
 from PIL.Image import Image
+from pydantic import BaseModel
 
 from switchai.types import (
     ChatResponse,
@@ -20,6 +21,7 @@ class BaseClient(ABC):
         max_tokens: Optional[int] = None,
         n: Optional[int] = 1,
         tools: Optional[List] = None,
+        response_format: Optional[Type[BaseModel]] = None,
         stream: Optional[bool] = False,
     ) -> Union[ChatResponse, Generator[ChatResponse, None, None]]:
         """
@@ -31,6 +33,7 @@ class BaseClient(ABC):
             max_tokens: The maximum number of tokens to generate. Defaults to None.
             n: How many chat completion choices to generate for each input message.
             tools: A list of tools the model may call.
+            response_format: An object specifying the format that the model must output.
             stream: Whether to stream the response.
 
         Returns:

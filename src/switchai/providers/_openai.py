@@ -1,10 +1,11 @@
 import json
 from io import BytesIO
-from typing import List, Optional, Union, Generator
+from typing import List, Optional, Union, Generator, Type
 
 import httpx
 from PIL.Image import Image
 from openai import NOT_GIVEN, OpenAI
+from pydantic import BaseModel
 
 from ..base_client import BaseClient
 from ..types import (
@@ -20,7 +21,7 @@ from ..types import (
     TranscriptionResponse,
     ImageGenerationResponse,
 )
-from ..utils import is_url, encode_image, contains_image
+from ..utils import is_url, encode_image, contains_image, inline_defs
 
 SUPPORTED_MODELS = {
     "chat": ["gpt-4o-mini", "gpt-4o", "o1-preview", "o1-mini", "gpt-4"],
@@ -44,9 +45,10 @@ class OpenaiClientAdapter(BaseClient):
         max_tokens: Optional[int] = None,
         n: Optional[int] = 1,
         tools: Optional[List] = None,
+        response_format: Optional[Type[BaseModel]] = None,
         stream: Optional[bool] = False,
     ) -> Union[ChatResponse, Generator[ChatResponse, None, None]]:
-        adapted_inputs = OpenaiChatInputsAdapter(messages, tools)
+        adapted_inputs = OpenaiChatInputsAdapter(messages, tools, response_format)
 
         response = self.client.chat.completions.create(
             model=self.model_name,
@@ -55,6 +57,7 @@ class OpenaiClientAdapter(BaseClient):
             max_completion_tokens=max_tokens,
             n=n,
             tools=adapted_inputs.tools,
+            response_format=adapted_inputs.response_format,
             stream=stream,
         )
 
@@ -94,9 +97,10 @@ class OpenaiClientAdapter(BaseClient):
 
 
 class OpenaiChatInputsAdapter:
-    def __init__(self, messages, tools=None):
+    def __init__(self, messages, tools=None, response_format=None):
         self.messages = [self._adapt_message(m) for m in messages]
         self.tools = self._adapt_tools(tools)
+        self.response_format = self._adapt_response_format(response_format)
 
     def _adapt_message(self, message):
         if isinstance(message, ChatChoice):
@@ -147,6 +151,23 @@ class OpenaiChatInputsAdapter:
 
     def _adapt_tools(self, tools):
         return NOT_GIVEN if tools is None else tools
+
+    def _adapt_response_format(self, response_format):
+        if response_format is None:
+            return NOT_GIVEN
+
+        response_format = response_format.model_json_schema()
+        if "$defs" in response_format:
+            for key, value in response_format["$defs"].items():
+                response_format["$defs"][key]["additionalProperties"] = False
+        response_format["additionalProperties"] = False
+        response_format = inline_defs(response_format)
+        response_format = {
+            "type": "json_schema",
+            "json_schema": {"name": response_format["title"], "strict": True, "schema": response_format},
+        }
+
+        return response_format
 
 
 class OpenaiChatResponseAdapter(ChatResponse):

@@ -1,8 +1,9 @@
-from typing import Union, List, Optional, Generator
+from typing import Union, List, Optional, Generator, Type
 
 import google.generativeai as genai
 import httpx
 from PIL.Image import Image
+from pydantic import BaseModel
 
 from ..base_client import BaseClient
 from ..types import (
@@ -16,7 +17,7 @@ from ..types import (
     EmbeddingUsage,
     Embedding,
 )
-from ..utils import is_url, encode_image, contains_image
+from ..utils import is_url, encode_image, contains_image, inline_defs
 
 SUPPORTED_MODELS = {
     "chat": ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.5-flash-8b"],
@@ -42,20 +43,26 @@ class GoogleClientAdapter(BaseClient):
         max_tokens: Optional[int] = None,
         n: Optional[int] = 1,
         tools: Optional[List] = None,
+        response_format: Optional[Type[BaseModel]] = None,
         stream: Optional[bool] = False,
     ) -> Union[ChatResponse, Generator[ChatResponse, None, None]]:
-        adapted_inputs = GoogleChatInputsAdapter(messages, tools)
+        adapted_inputs = GoogleChatInputsAdapter(messages, tools, response_format)
 
         if self.client is None:
             self.client = genai.GenerativeModel(self.model_name, system_instruction=adapted_inputs.system_prompt)
 
+        generation_config = genai.types.GenerationConfig(
+            candidate_count=n,
+            max_output_tokens=max_tokens,
+            temperature=temperature,
+        )
+        if response_format is not None:
+            generation_config.response_schema = adapted_inputs.response_format
+            generation_config.response_mime_type = "application/json"
+
         response = self.client.generate_content(
             contents=adapted_inputs.messages,
-            generation_config=genai.types.GenerationConfig(
-                candidate_count=n,
-                max_output_tokens=max_tokens,
-                temperature=temperature,
-            ),
+            generation_config=generation_config,
             tools=adapted_inputs.tools,
             stream=stream,
         )
@@ -89,7 +96,7 @@ class GoogleClientAdapter(BaseClient):
 
 
 class GoogleChatInputsAdapter:
-    def __init__(self, messages, tools=None):
+    def __init__(self, messages, tools=None, response_format=None):
         self.system_prompt = None
         if messages[0]["role"] == "system":
             self.system_prompt = messages[0]["content"]
@@ -97,6 +104,7 @@ class GoogleChatInputsAdapter:
 
         self.messages = [self._adapt_message(m) for m in messages]
         self.tools = self._adapt_tools(tools)
+        self.response_format = self._adapt_response_format(response_format)
 
     def _adapt_message(self, message):
         if isinstance(message, ChatChoice):
@@ -178,6 +186,21 @@ class GoogleChatInputsAdapter:
                 adapted_tools[0]["function_declarations"].append(function)
 
         return adapted_tools
+
+    def _adapt_response_format(self, response_format):
+        def remove_title_keys(d):
+            if isinstance(d, dict):
+                return {k: remove_title_keys(v) for k, v in d.items() if k != "title"}
+            elif isinstance(d, list):
+                return [remove_title_keys(item) for item in d]
+            else:
+                return d
+
+        response_format = response_format.model_json_schema()
+        response_format = remove_title_keys(response_format)
+        response_format = inline_defs(response_format)
+
+        return response_format
 
 
 class GoogleChatResponseAdapter(ChatResponse):

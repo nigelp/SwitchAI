@@ -1,13 +1,12 @@
 import copy
 import warnings
-from typing import List, Optional, Generator, Union
+from typing import List, Optional, Generator, Union, Type
 
-from anthropic import Anthropic, NOT_GIVEN
+from anthropic import Anthropic, NOT_GIVEN, BaseModel
 
 from ..base_client import BaseClient
 from ..types import ChatChoice, ChatResponse, ChatUsage, ChatMessage, ChatToolCall, Function
-from ..utils import is_url, encode_image
-
+from ..utils import is_url, encode_image, inline_defs
 
 SUPPORTED_MODELS = {"chat": ["claude-3-5-sonnet-latest", "claude-3-5-haiku-latest", "claude-3-opus-latest"]}
 
@@ -26,6 +25,7 @@ class AnthropicClientAdapter(BaseClient):
         max_tokens: Optional[int] = None,
         n: Optional[int] = 1,
         tools: Optional[List] = None,
+        response_format: Optional[Type[BaseModel]] = None,
         stream: Optional[bool] = False,
     ) -> Union[ChatResponse, Generator[ChatResponse, None, None]]:
         if n != 1:
@@ -34,7 +34,15 @@ class AnthropicClientAdapter(BaseClient):
         if max_tokens is None:
             raise ValueError(f"max_tokens must be set for Anthropic models ({self.model_name}).")
 
-        adapted_inputs = AnthropicChatInputsAdapter(messages, tools=tools)
+        if response_format is not None and tools is not None:
+            warnings.warn("Anthropic models do not support response_format and tools together. Ignoring tools.")
+
+        if response_format:
+            warnings.warn(
+                "Anthropic models treat response_format as tools. When used, the response will have two parts: content and tool_calls."
+            )
+
+        adapted_inputs = AnthropicChatInputsAdapter(messages, tools, response_format)
 
         response = self.client.messages.create(
             model=self.model_name,
@@ -42,7 +50,7 @@ class AnthropicClientAdapter(BaseClient):
             system=adapted_inputs.system_prompt,
             temperature=temperature,
             max_tokens=max_tokens,
-            tools=adapted_inputs.tools,
+            tools=adapted_inputs.response_format if response_format else adapted_inputs.tools,
             stream=stream,
         )
 
@@ -59,7 +67,7 @@ class AnthropicClientAdapter(BaseClient):
 
 
 class AnthropicChatInputsAdapter:
-    def __init__(self, messages, tools=None):
+    def __init__(self, messages, tools=None, response_format=None):
         self.system_prompt = NOT_GIVEN
         if messages and messages[0].get("role") == "system":
             self.system_prompt = messages[0]["content"]
@@ -67,6 +75,7 @@ class AnthropicChatInputsAdapter:
 
         self.messages = [self._adapt_message(m) for m in messages]
         self.tools = self._adapt_tools(tools)
+        self.response_format = [self._adapt_response_format(response_format)]
 
     def _adapt_message(self, message):
         if isinstance(message, ChatChoice):
@@ -147,6 +156,16 @@ class AnthropicChatInputsAdapter:
             adapted_tools.append(tool_copy["function"])
 
         return adapted_tools
+
+    def _adapt_response_format(self, response_format):
+        if response_format is None:
+            return NOT_GIVEN
+
+        response_format = response_format.model_json_schema()
+        response_format = inline_defs(response_format)
+        response_format = {"name": response_format["title"], "input_schema": response_format}
+
+        return response_format
 
 
 class AnthropicChatResponseAdapter(ChatResponse):

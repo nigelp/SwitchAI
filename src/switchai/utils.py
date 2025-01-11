@@ -22,3 +22,25 @@ def contains_image(inputs: Any) -> bool:
     if isinstance(inputs, list):
         return any(isinstance(item, Image) for item in inputs)
     return isinstance(inputs, Image)
+
+
+def inline_defs(schema):
+    if "$defs" in schema:
+        defs = schema.pop("$defs")
+        for key, value in defs.items():
+            ref_path = f"#/$defs/{key}"
+            replace_refs(schema, ref_path, value)
+    return schema
+
+
+def replace_refs(obj, ref_path, definition):
+    if isinstance(obj, dict):
+        for key, value in list(obj.items()):
+            if key == "$ref" and value == ref_path:
+                obj.clear()
+                obj.update(definition)
+            else:
+                replace_refs(value, ref_path, definition)
+    elif isinstance(obj, list):
+        for item in obj:
+            replace_refs(item, ref_path, definition)
