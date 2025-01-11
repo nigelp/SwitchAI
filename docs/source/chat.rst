@@ -7,6 +7,7 @@ Chat
 
     vision
     function_calling
+    structured_outputs
 
 SwitchAI provides a straightforward interface to generate text using a wide variety of language models. These models are trained on vast amounts of data, enabling them to interpret multimedia inputs and follow natural language instructions. Based on the given prompts, the models can generate diverse outputs, including code, mathematical equations, structured JSON data, or human-like prose.
 
