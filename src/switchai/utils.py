@@ -1,15 +1,22 @@
 import base64
+import io
 import re
 from typing import Any, Union
 
 from PIL.Image import Image
 
 
-def encode_image(image_path: Union[str, bytes]) -> str:
-    if isinstance(image_path, bytes):
-        return base64.b64encode(image_path).decode("utf-8")
+def encode_image(image_input: Union[str, bytes, Image]) -> str:
+    if isinstance(image_input, Image):
+        buffered = io.BytesIO()
+        image_input.save(buffered, format="JPEG")
+        image_bytes = buffered.getvalue()
+        return base64.b64encode(image_bytes).decode("utf-8")
 
-    with open(image_path, "rb") as image_file:
+    if isinstance(image_input, bytes):
+        return base64.b64encode(image_input).decode("utf-8")
+
+    with open(image_input, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode("utf-8")
 
 

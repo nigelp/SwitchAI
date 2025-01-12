@@ -171,7 +171,7 @@ class MistralChatInputsAdapter:
 
     def _adapt_image_content(self, content_item):
         image = content_item.get("image")
-        if is_url(image):
+        if isinstance(image, str) and is_url(image):
             return {"type": "image_url", "image_url": {"url": image}}
         base64_image = encode_image(image)
         return {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}

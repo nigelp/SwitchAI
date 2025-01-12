@@ -169,7 +169,7 @@ class GoogleChatInputsAdapter:
 
     def _adapt_image_content(self, content_item):
         image = content_item.get("image")
-        if is_url(image):
+        if isinstance(image, str) and is_url(image):
             image = httpx.get(image).content
         base64_image = encode_image(image)
         return {"mime_type": "image/jpeg", "data": base64_image}
@@ -188,6 +188,9 @@ class GoogleChatInputsAdapter:
         return adapted_tools
 
     def _adapt_response_format(self, response_format):
+        if response_format is None:
+            return None
+
         def remove_title_keys(d):
             if isinstance(d, dict):
                 return {k: remove_title_keys(v) for k, v in d.items() if k != "title"}
