@@ -1,7 +1,7 @@
 Browser
 =======
 
-The Browser is an SuperClient that extends the functionalities of a SwitchAI client used for chat. It enables the AI model to access a website to perform various tasks such as information extraction, summarization, indexing, or answering questions about the website's content.
+Browser is an SuperClient that extends the functionalities of a chat SwitchAI client. It enables an LLM to access a website to perform various tasks such as information extraction, summarization, indexing, or answering questions about the website's content.
 
 Here is an example of how to use it:
 

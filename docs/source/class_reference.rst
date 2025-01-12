@@ -55,8 +55,14 @@ Class Reference
     :members:
     :exclude-members: model_config
 
+SuperClients
+------------
 
 .. autoclass:: switchai.Browser
+    :members:
+    :exclude-members: model_config
+
+.. autoclass:: switchai.Classifier
     :members:
     :exclude-members: model_config
 
