@@ -1,4 +1,5 @@
 import copy
+import json
 import warnings
 from typing import List, Optional, Generator, Union, Type
 
@@ -57,7 +58,7 @@ class AnthropicClientAdapter(BaseClient):
         if stream:
             return self._stream_chat_response(response)
         else:
-            return AnthropicChatResponseAdapter(response)
+            return AnthropicChatResponseAdapter(response, parse_tools_as_choices=response_format is not None)
 
     def _stream_chat_response(self, response):
         for chunk in response:
@@ -169,32 +170,54 @@ class AnthropicChatInputsAdapter:
 
 
 class AnthropicChatResponseAdapter(ChatResponse):
-    def __init__(self, response):
-        super().__init__(
-            id=response.id,
-            object=None,
-            model=response.model,
-            usage=ChatUsage(
-                input_tokens=response.usage.input_tokens,
-                output_tokens=response.usage.output_tokens,
-                total_tokens=response.usage.input_tokens + response.usage.output_tokens,
-            ),
-            choices=[
-                ChatChoice(
-                    index=0,
-                    message=ChatMessage(role=response.role, content=response.content[0].text),
-                    tool_calls=[
-                        ChatToolCall(
-                            id=response.content[1].id,
-                            function=Function(name=response.content[1].name, arguments=response.content[1].input),
-                        )
-                    ]
-                    if len(response.content) > 1
-                    else None,
-                    finish_reason=response.stop_reason,
-                )
-            ],
-        )
+    def __init__(self, response, parse_tools_as_choices=False):
+        if parse_tools_as_choices:
+            # # Parse tools as choices for structured outputs,
+            # as Anthropic models treat them as tools.
+            super().__init__(
+                id=response.id,
+                object=None,
+                model=response.model,
+                usage=ChatUsage(
+                    input_tokens=response.usage.input_tokens,
+                    output_tokens=response.usage.output_tokens,
+                    total_tokens=response.usage.input_tokens + response.usage.output_tokens,
+                ),
+                choices=[
+                    ChatChoice(
+                        index=0,
+                        message=ChatMessage(role=response.role, content=json.dumps(response.content[1].input)),
+                        tool_calls=None,
+                        finish_reason=response.stop_reason,
+                    )
+                ],
+            )
+        else:
+            super().__init__(
+                id=response.id,
+                object=None,
+                model=response.model,
+                usage=ChatUsage(
+                    input_tokens=response.usage.input_tokens,
+                    output_tokens=response.usage.output_tokens,
+                    total_tokens=response.usage.input_tokens + response.usage.output_tokens,
+                ),
+                choices=[
+                    ChatChoice(
+                        index=0,
+                        message=ChatMessage(role=response.role, content=response.content[0].text),
+                        tool_calls=[
+                            ChatToolCall(
+                                id=response.content[1].id,
+                                function=Function(name=response.content[1].name, arguments=response.content[1].input),
+                            )
+                        ]
+                        if len(response.content) > 1
+                        else None,
+                        finish_reason=response.stop_reason,
+                    )
+                ],
+            )
 
 
 class AnthropicChatResponseChunkAdapter(ChatResponse):

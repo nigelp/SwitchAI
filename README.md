@@ -117,7 +117,7 @@ client = SwitchAI(provider="google", model_name="models/text-embedding-004")
 
 # Generate embeddings for a list of text inputs
 response = client.embed(
-    input=[
+    inputs=[
         "I am feeling great today!",
         "I am feeling sad today."
     ]
@@ -181,6 +181,20 @@ response = client.chat(
 )
 
 print(response)
+```
+
+### Classifier
+
+Assigns a label to a text or image input.
+
+```python
+from switchai import SwitchAI, Classifier
+
+client = SwitchAI(provider="openai", model_name="gpt-4o-mini")
+classifier = Classifier(client, classes=["negative", "positive"])
+
+response = classifier.classify("I am feeling great today!")
+print(response) # Output: "positive"
 ```
 
 ### ImageRetriever
