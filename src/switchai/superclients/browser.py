@@ -1,6 +1,7 @@
-from typing import List, Optional, Generator, Union
+from typing import List, Optional, Generator, Union, Type
 
 import httpx
+from pydantic import BaseModel
 
 from .. import SwitchAI
 from ..base_client import BaseClient
@@ -46,6 +47,7 @@ class Browser(BaseClient):
         max_tokens: Optional[int] = None,
         n: Optional[int] = 1,
         tools: Optional[List] = None,
+        response_format: Optional[Type[BaseModel]] = None,
         stream: Optional[bool] = False,
     ) -> Union[ChatResponse, Generator[ChatResponse, None, None]]:
         if tools is None:
