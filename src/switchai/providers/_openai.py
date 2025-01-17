@@ -2,6 +2,7 @@ import json
 from io import BytesIO
 from typing import List, Optional, Union, Generator, Type
 
+import PIL
 import httpx
 from PIL.Image import Image
 from openai import NOT_GIVEN, OpenAI
@@ -264,7 +265,7 @@ class OpenaiImageGenerationResponseAdapter(ImageGenerationResponse):
         images = []
         for image in response.data:
             downloaded_image = httpx.get(image.url)
-            pil_image = Image.open(BytesIO(downloaded_image.content))
+            pil_image = PIL.Image.open(BytesIO(downloaded_image.content))
             images.append(pil_image)
 
         super().__init__(images=images)

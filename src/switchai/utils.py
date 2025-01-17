@@ -34,9 +34,22 @@ def contains_image(inputs: Any) -> bool:
 def inline_defs(schema):
     if "$defs" in schema:
         defs = schema.pop("$defs")
-        for key, value in defs.items():
-            ref_path = f"#/$defs/{key}"
-            replace_refs(schema, ref_path, value)
+        resolved = set()
+
+        while True:
+            remaining_refs = False
+
+            for key, value in defs.items():
+                ref_path = f"#/$defs/{key}"
+                if ref_path not in resolved:
+                    replace_refs(schema, ref_path, value)
+                    replace_refs(defs, ref_path, value)
+                    resolved.add(ref_path)
+                    remaining_refs = True
+
+            if not remaining_refs:
+                break
+
     return schema
 
 
