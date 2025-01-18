@@ -36,7 +36,7 @@ class Browser(BaseClient):
 
     def __init__(self, client: SwitchAI):
         if client.model_category != "chat":
-            raise ValueError("The browser client only supports chat models.")
+            raise ValueError("Browser only accepts chat models.")
 
         self.client = client
 
