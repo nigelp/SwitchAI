@@ -66,6 +66,10 @@ SuperClients
     :members:
     :exclude-members: model_config
 
+.. autoclass:: switchai.Illustrator
+    :members:
+    :exclude-members: model_config
+
 .. autoclass:: switchai.ImageRetriever
     :members:
     :exclude-members: model_config
