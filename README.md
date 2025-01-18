@@ -174,8 +174,8 @@ client = Browser(client)
 response = client.chat(
     messages=[
         {
-          "role": "user", 
-          "content": "Can you summarize the content of this website: https://example.com?"
+            "role": "user",
+            "content": "Can you summarize the content of this website: https://example.com?"
         },
     ]
 )
@@ -194,7 +194,23 @@ client = SwitchAI(provider="openai", model_name="gpt-4o-mini")
 classifier = Classifier(client, classes=["negative", "positive"])
 
 response = classifier.classify("I am feeling great today!")
-print(response) # Output: "positive"
+print(response)  # Output: "positive"
+```
+
+### Illustrator
+
+Creates SVG illustrations using simple textual descriptions.
+
+```python
+from switchai import SwitchAI, Illustrator
+
+client = SwitchAI(provider="openai", model_name="gpt-4o")
+
+illustrator = Illustrator(client)
+illustrator.generate_illustration(
+    "Design a futuristic logo for my AI app with a sleek, modern aesthetic.",
+    output_path="logo.svg",
+)
 ```
 
 ### ImageRetriever
