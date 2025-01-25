@@ -6,6 +6,7 @@ import PIL
 import cairosvg
 from PIL.Image import Image
 from pydantic import BaseModel, Field
+from tqdm import tqdm
 
 from .. import SwitchAI
 
@@ -101,12 +102,7 @@ class Illustrator:
 
         if editor_mode:
             while True:
-                user_input = input(
-                    "How would you like to change the illustration? (or type '/exit' to quit): "
-                ).strip()
-
-                if user_input.lower() == "/exit":
-                    break
+                user_input = input("How would you like to change the illustration? (or CTRL+C to exit): ").strip()
 
                 main_thread.append({"role": "user", "content": user_input})
                 full_description.append(user_input)
@@ -123,8 +119,8 @@ class Illustrator:
     ):
         max_revision_steps += 1
 
-        print("Generating illustration...")
-        for i in range(max_revision_steps):
+        pbar = tqdm(desc="Working on illustration", unit="step")
+        for _ in range(max_revision_steps):
             response = self.author.chat(messages=messages, response_format=Illustration)
 
             json_data = json.loads(response.choices[0].message.content)
@@ -163,6 +159,8 @@ class Illustrator:
 
             messages.append({"role": "assistant", "content": response.choices[0].message.content})
             messages.append({"role": "user", "content": critic_response.instructions})
+
+            pbar.update(1)
 
         try:
             with open(output_path, "w") as f:
