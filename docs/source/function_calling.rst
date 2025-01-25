@@ -36,7 +36,7 @@ Here’s how to define a function for a model:
         tools=tools
     )
 
-    print(response.choices[0].tool_calls)
+    print(response.tool_calls)
 
 
 This returns a function call like:
@@ -61,7 +61,7 @@ You can then call the function on the application side and return the result to 
         # Call an external API to get the price of the product
         return 999
 
-    tool_call = response.choices[0].tool_calls[0]
+    tool_call = response.tool_calls[0]
     price = get_price(tool_call["function"]["arguments"]["product"])
 
     function_call_result_message = {
@@ -71,7 +71,7 @@ You can then call the function on the application side and return the result to 
         "tool_name": tool_call.function.name
     }
 
-    messages.append(response.choices[0])
+    messages.append(response)
     messages.append(function_call_result_message)
 
     response = client.chat(
@@ -79,7 +79,7 @@ You can then call the function on the application side and return the result to 
         tools=tools
     )
 
-    print(response.choices[0].message.content)
+    print(response.message.content)
 
 The model uses the returned result to generate a response.
 

@@ -7,8 +7,13 @@ Class Reference
    :inherited-members:
    :exclude-members: get_model_category, get_provider_name
 
+.. _chatresponse:
 
 .. autoclass:: switchai.types.ChatResponse
+    :members:
+    :exclude-members: model_config
+
+.. autoclass:: switchai.types.ChatMessage
     :members:
     :exclude-members: model_config
 
@@ -16,15 +21,7 @@ Class Reference
     :members:
     :exclude-members: model_config
 
-.. autoclass:: switchai.types.ChatChoice
-    :members:
-    :exclude-members: model_config
-
 .. autoclass:: switchai.types.ChatToolCall
-    :members:
-    :exclude-members: model_config
-
-.. autoclass:: switchai.types.ChatMessage
     :members:
     :exclude-members: model_config
 

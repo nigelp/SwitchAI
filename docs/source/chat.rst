@@ -9,11 +9,11 @@ Chat
     function_calling
     structured_outputs
 
-SwitchAI provides a straightforward interface to generate text using a wide variety of language models. These models are trained on vast amounts of data, enabling them to interpret multimedia inputs and follow natural language instructions. Based on the given prompts, the models can generate diverse outputs, including code, mathematical equations, structured JSON data, or human-like prose.
+SwitchAI provides a straightforward interface for generating text using a wide variety of large language models. These models are trained on vast amounts of data, enabling them to perform a wide range of language-related tasks such as text generation, translation, summarization, question answering, and more.
 
-Generating Text
----------------
-To generate text, use the ``chat`` method of the SwitchAI client. This method accepts a list of messages as input and returns a list of responses. Each input message requires an assigned role, such as "user" or "assistant," to indicate the speaker. The output will include the model's generated response corresponding to each user message.
+Quickstart
+----------
+To generate text, use the ``chat`` method of the SwitchAI client. This method accepts a list of messages as input and returns a :ref:`ChatResponse<chatresponse>`. Each input message requires an assigned role, such as "user" or "assistant," to indicate the speaker.
 
 Here's an example of how to use it:
 
@@ -31,9 +31,80 @@ Here's an example of how to use it:
 
     print(response)
 
-Streaming
-^^^^^^^^^
+The generated response could look like this:
 
+.. code:: json
+
+    {
+      "id": "Atf113GwsNo0ksTvFBIfWsOV1KdCx",
+      "message": {
+        "role": "assistant",
+        "content": "Hello! How can I assist you today?"
+      },
+      "tool_calls": null,
+      "usage": {
+        "input_tokens": 8,
+        "output_tokens": 10,
+        "total_tokens": 18
+      },
+      "finish_reason": "completed"
+    }
+
+The responses contains the model response along with other useful information such as the number of input and output tokens, and the reason the conversation ended.
+
+
+Messages and Roles
+------------------
+Chat messages are collections of prompts or interactions, with each message assigned a specific role: "system," "user," "assistant," or "tool." Each message role serves a distinct purpose in the conversation:
+
+1. **System messages** are optional messages used to set the behavior or context for the AI model in a conversation. These messages can:
+    - Modify the model's behavior.
+    - Provide specific instructions or guidelines.
+    - Include task parameters, creativity constraints, or relevant contextual information.
+
+2. **User messages** represent input from a human interacting with the AI model.
+
+3. **Assistant messages** are the AI's responses to user inputs.
+
+4. **Tool messages** occur in the context of function calling.
+
+By structuring messages with these roles, you can effectively guide the AI's behavior and responses to suit your specific needs.
+
+Finish Reasons
+--------------
+The ``finish_reason`` field in the response indicates the reason the conversation ended. Possible values include:
+
+- **completed**: The conversation ended successfully.
+- **max_tokens**: The model reached the maximum token limit.
+- **tool_calls**: The conversation ended due to a tool call.
+- **content_filtering**: Generated content was filtered out.
+- **unknown**: The conversation ended for an unknown reason.
+
+Running a Conversation
+----------------------
+
+Here's an example of how to run a full conversation with the AI model:
+
+.. code:: python
+
+    from switchai import SwitchAI
+
+    client = SwitchAI(provider="openai", model_name="gpt-4")
+    messages = [
+        {"role": "system", "content": "You are a friendly assistant."},
+    ]
+
+    while True:
+        user_input = input("You (CTRL+C to exit): ")
+        messages.append({"role": "user", "content": user_input})
+
+        response = client.chat(messages=messages)
+
+        print(f"AI: {response.message.content}")
+        messages.append(response.message)
+
+Streaming
+---------
 Streaming allows you to get responses from the model as they are generated, instead of waiting for the entire response to be generated.
 
 Here's an example of how to use it:
@@ -54,24 +125,4 @@ Here's an example of how to use it:
     for chunk in response:
         print(chunk)
 
-Chat Messages
--------------
-
-Chat messages are collections of prompts or interactions, with each message assigned a specific role, such as "system," "user," "assistant," or "tool." Each message role serves a distinct purpose in the conversation:
-
-1. **System Messages:** System messages are optional and used to set the behavior or context for the AI assistant in a conversation. These messages can:
-
-    - Modify the assistant's personality.
-
-    - Provide specific instructions or guidelines.
-
-    - Include task parameters, creativity constraints, or relevant contextual information.
-
-2. **User Messages:** User messages represent input from a human interacting with the AI assistant.
-
-3. **Assistant Messages:** Assistant messages are the AI's responses to user inputs.
-
-4. **Tool Messages:** Tool messages occur in the context of function calling. These messages appear during the final response formulation when the model formats the output of a tool call for the user.
-
-By structuring messages with these roles, you can effectively guide the AI's behavior and responses to suit your specific needs.
-
+In this example, the response is returned as a stream of chunks, which you can print or process in real time.
