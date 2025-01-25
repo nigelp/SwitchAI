@@ -32,16 +32,14 @@ class AnthropicClientAdapter(BaseClient):
         if n != 1:
             warnings.warn(f"Anthropic models ({self.model_name}) only support n=1. Ignoring n={n}.")
 
+        # If max_tokens is not specified, set it to 4096.
+        # This ensures compatibility with all Anthropic models,
+        # as 4096 is the minimum supported value across these models.
         if max_tokens is None:
-            raise ValueError(f"max_tokens must be set for Anthropic models ({self.model_name}).")
+            max_tokens = 4096
 
         if response_format is not None and tools is not None:
-            warnings.warn("Anthropic models do not support response_format and tools together. Ignoring tools.")
-
-        if response_format:
-            warnings.warn(
-                "Anthropic models treat response_format as tools. When used, the response will have two parts: content and tool_calls."
-            )
+            warnings.warn("Anthropic models do not support the use of response_format and tools at the same time. Ignoring tools.")
 
         adapted_inputs = AnthropicChatInputsAdapter(messages, tools, response_format)
 
@@ -143,7 +141,7 @@ class AnthropicChatInputsAdapter:
         base64_image = encode_image(image)
         return {
             "type": "image",
-            "source": {"type": "base64", "media_type": "image/jpeg", "data": base64_image},
+            "source": {"type": "base64", "media_type": "image/png", "data": base64_image},
         }
 
     def _adapt_tools(self, tools):
@@ -172,8 +170,6 @@ class AnthropicChatInputsAdapter:
 class AnthropicChatResponseAdapter(ChatResponse):
     def __init__(self, response, parse_tools_as_choices=False):
         if parse_tools_as_choices:
-            # # Parse tools as choices for structured outputs,
-            # as Anthropic models treat them as tools.
             super().__init__(
                 id=response.id,
                 object=None,
