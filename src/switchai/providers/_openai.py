@@ -10,7 +10,6 @@ from pydantic import BaseModel
 
 from ..base_client import BaseClient
 from ..types import (
-    ChatChoice,
     ChatResponse,
     ChatUsage,
     ChatMessage,
@@ -41,10 +40,9 @@ class OpenaiClientAdapter(BaseClient):
 
     def chat(
         self,
-        messages: List[str | ChatChoice | dict],
+        messages: List[str | dict | ChatResponse],
         temperature: Optional[float] = 1.0,
         max_tokens: Optional[int] = None,
-        n: Optional[int] = 1,
         tools: Optional[List] = None,
         response_format: Optional[Type[BaseModel]] = None,
         stream: Optional[bool] = False,
@@ -56,7 +54,6 @@ class OpenaiClientAdapter(BaseClient):
             messages=adapted_inputs.messages,
             temperature=temperature,
             max_completion_tokens=max_tokens,
-            n=n,
             tools=adapted_inputs.tools,
             response_format=adapted_inputs.response_format,
             stream=stream,
@@ -104,21 +101,21 @@ class OpenaiChatInputsAdapter:
         self.response_format = self._adapt_response_format(response_format)
 
     def _adapt_message(self, message):
-        if isinstance(message, ChatChoice):
-            return self._adapt_chat_choice(message)
+        if isinstance(message, ChatResponse):
+            return self._adapt_chat_response(message)
 
         if message["role"] == "user":
             return self._adapt_user_message(message)
 
         return message
 
-    def _adapt_chat_choice(self, chat_choice):
+    def _adapt_chat_response(self, chat_response):
         adapted_message = {
-            "role": chat_choice.message.role,
-            "content": chat_choice.message.content,
+            "role": chat_response.message.role,
+            "content": chat_response.message.content,
         }
-        if chat_choice.tool_calls:
-            adapted_tools = [tool_call.dict() for tool_call in chat_choice.tool_calls]
+        if chat_response.tool_calls:
+            adapted_tools = [tool_call.dict() for tool_call in chat_response.tool_calls]
             for tool in adapted_tools:
                 tool["function"]["arguments"] = str(tool["function"]["arguments"])
             adapted_message["tool_calls"] = adapted_tools
@@ -173,41 +170,57 @@ class OpenaiChatInputsAdapter:
 
 class OpenaiChatResponseAdapter(ChatResponse):
     def __init__(self, response):
+        choice = response.choices[0]
         super().__init__(
             id=response.id,
-            object=response.object,
-            model=response.model,
+            message=ChatMessage(role=choice.message.role, content=choice.message.content),
+            tool_calls=[
+                ChatToolCall(
+                    id=tool.id,
+                    function=Function(name=tool.function.name, arguments=json.loads(tool.function.arguments)),
+                )
+                for tool in choice.message.tool_calls
+            ]
+            if choice.message.tool_calls is not None
+            else None,
             usage=ChatUsage(
                 input_tokens=response.usage.prompt_tokens,
                 output_tokens=response.usage.completion_tokens,
                 total_tokens=response.usage.total_tokens,
             ),
-            choices=[
-                ChatChoice(
-                    index=choice.index,
-                    message=ChatMessage(role=choice.message.role, content=choice.message.content),
-                    tool_calls=[
-                        ChatToolCall(
-                            id=tool.id,
-                            function=Function(name=tool.function.name, arguments=json.loads(tool.function.arguments)),
-                        )
-                        for tool in choice.message.tool_calls
-                    ]
-                    if choice.message.tool_calls is not None
-                    else None,
-                    finish_reason=choice.finish_reason,
-                )
-                for choice in response.choices
-            ],
+            finish_reason=self.adapt_finish_reason(choice.finish_reason),
         )
+
+    @staticmethod
+    def adapt_finish_reason(finish_reason):
+        if finish_reason == "stop":
+            return "completed"
+        elif finish_reason == "length":
+            return "max_tokens"
+        elif finish_reason == "content_filter":
+            return "content_filter"
+        elif finish_reason == "tool_calls":
+            return "tool_calls"
+        else:
+            return "unknown"
 
 
 class OpenaiChatResponseChunkAdapter(ChatResponse):
     def __init__(self, response):
+        choice = response.choices[0]
+
         super().__init__(
             id=response.id,
-            object=response.object,
-            model=response.model,
+            message=ChatMessage(role=choice.delta.role, content=choice.delta.content),
+            tool_calls=[
+                ChatToolCall(
+                    id=tool.id,
+                    function=Function(name=tool.function.name, arguments=json.loads(tool.function.arguments)),
+                )
+                for tool in choice.delta.tool_calls
+            ]
+            if choice.delta.tool_calls is not None
+            else None,
             usage=ChatUsage(
                 input_tokens=response.usage.prompt_tokens,
                 output_tokens=response.usage.completion_tokens,
@@ -215,23 +228,9 @@ class OpenaiChatResponseChunkAdapter(ChatResponse):
             )
             if response.usage is not None
             else None,
-            choices=[
-                ChatChoice(
-                    index=choice.index,
-                    message=ChatMessage(role=choice.delta.role, content=choice.delta.content),
-                    tool_calls=[
-                        ChatToolCall(
-                            id=tool.id,
-                            function=Function(name=tool.function.name, arguments=json.loads(tool.function.arguments)),
-                        )
-                        for tool in choice.delta.tool_calls
-                    ]
-                    if choice.delta.tool_calls is not None
-                    else None,
-                    finish_reason=choice.finish_reason,
-                )
-                for choice in response.choices
-            ],
+            finish_reason=OpenaiChatResponseAdapter.adapt_finish_reason(choice.finish_reason)
+            if choice.finish_reason
+            else None,
         )
 
 

@@ -6,7 +6,7 @@ from typing import List, Optional, Generator, Union, Type
 from anthropic import Anthropic, NOT_GIVEN, BaseModel
 
 from ..base_client import BaseClient
-from ..types import ChatChoice, ChatResponse, ChatUsage, ChatMessage, ChatToolCall, Function
+from ..types import ChatResponse, ChatUsage, ChatMessage, ChatToolCall, Function
 from ..utils import is_url, encode_image, inline_defs
 
 SUPPORTED_MODELS = {"chat": ["claude-3-5-sonnet-latest", "claude-3-5-haiku-latest", "claude-3-opus-latest"]}
@@ -21,17 +21,13 @@ class AnthropicClientAdapter(BaseClient):
 
     def chat(
         self,
-        messages: List[str | ChatChoice | dict],
+        messages: List[str | dict | ChatResponse],
         temperature: Optional[float] = 1.0,
         max_tokens: Optional[int] = None,
-        n: Optional[int] = 1,
         tools: Optional[List] = None,
         response_format: Optional[Type[BaseModel]] = None,
         stream: Optional[bool] = False,
     ) -> Union[ChatResponse, Generator[ChatResponse, None, None]]:
-        if n != 1:
-            warnings.warn(f"Anthropic models ({self.model_name}) only support n=1. Ignoring n={n}.")
-
         # If max_tokens is not specified, set it to 4096.
         # This ensures compatibility with all Anthropic models,
         # as 4096 is the minimum supported value across these models.
@@ -39,7 +35,9 @@ class AnthropicClientAdapter(BaseClient):
             max_tokens = 4096
 
         if response_format is not None and tools is not None:
-            warnings.warn("Anthropic models do not support the use of response_format and tools at the same time. Ignoring tools.")
+            warnings.warn(
+                "Anthropic models do not support the use of response_format and tools at the same time. Ignoring tools."
+            )
 
         adapted_inputs = AnthropicChatInputsAdapter(messages, tools, response_format)
 
@@ -77,8 +75,8 @@ class AnthropicChatInputsAdapter:
         self.response_format = [self._adapt_response_format(response_format)]
 
     def _adapt_message(self, message):
-        if isinstance(message, ChatChoice):
-            return self._adapt_chat_choice(message)
+        if isinstance(message, ChatResponse):
+            return self._adapt_chat_response(message)
         if message["role"] == "tool":
             return self._adapt_tool_message(message)
         if message["role"] == "user":
@@ -86,21 +84,21 @@ class AnthropicChatInputsAdapter:
 
         return message
 
-    def _adapt_chat_choice(self, chat_choice):
-        if chat_choice.tool_calls:
+    def _adapt_chat_response(self, chat_response):
+        if chat_response.tool_calls:
             return {
-                "role": chat_choice.message.role,
+                "role": chat_response.message.role,
                 "content": [
-                    {"type": "text", "text": chat_choice.message.content},
+                    {"type": "text", "text": chat_response.message.content},
                     {
                         "type": "tool_use",
-                        "id": chat_choice.tool_calls[0].id,
-                        "name": chat_choice.tool_calls[0].function.name,
-                        "input": chat_choice.tool_calls[0].function.arguments,
+                        "id": chat_response.tool_calls[0].id,
+                        "name": chat_response.tool_calls[0].function.name,
+                        "input": chat_response.tool_calls[0].function.arguments,
                     },
                 ],
             }
-        return {"role": chat_choice.message.role, "content": chat_choice.message.content}
+        return {"role": chat_response.message.role, "content": chat_response.message.content}
 
     def _adapt_tool_message(self, message):
         return {
@@ -172,65 +170,55 @@ class AnthropicChatResponseAdapter(ChatResponse):
         if parse_tools_as_choices:
             super().__init__(
                 id=response.id,
-                object=None,
-                model=response.model,
+                message=ChatMessage(role=response.role, content=json.dumps(response.content[1].input)),
+                tool_calls=None,
                 usage=ChatUsage(
                     input_tokens=response.usage.input_tokens,
                     output_tokens=response.usage.output_tokens,
                     total_tokens=response.usage.input_tokens + response.usage.output_tokens,
                 ),
-                choices=[
-                    ChatChoice(
-                        index=0,
-                        message=ChatMessage(role=response.role, content=json.dumps(response.content[1].input)),
-                        tool_calls=None,
-                        finish_reason=response.stop_reason,
-                    )
-                ],
+                finish_reason=self.adapt_finish_reason(response.stop_reason),
             )
         else:
             super().__init__(
                 id=response.id,
-                object=None,
-                model=response.model,
+                message=ChatMessage(role=response.role, content=response.content[0].text),
+                tool_calls=[
+                    ChatToolCall(
+                        id=response.content[1].id,
+                        function=Function(name=response.content[1].name, arguments=response.content[1].input),
+                    )
+                ]
+                if len(response.content) > 1
+                else None,
                 usage=ChatUsage(
                     input_tokens=response.usage.input_tokens,
                     output_tokens=response.usage.output_tokens,
                     total_tokens=response.usage.input_tokens + response.usage.output_tokens,
                 ),
-                choices=[
-                    ChatChoice(
-                        index=0,
-                        message=ChatMessage(role=response.role, content=response.content[0].text),
-                        tool_calls=[
-                            ChatToolCall(
-                                id=response.content[1].id,
-                                function=Function(name=response.content[1].name, arguments=response.content[1].input),
-                            )
-                        ]
-                        if len(response.content) > 1
-                        else None,
-                        finish_reason=response.stop_reason,
-                    )
-                ],
+                finish_reason=self.adapt_finish_reason(response.stop_reason),
             )
+
+    @staticmethod
+    def adapt_finish_reason(finish_reason):
+        if finish_reason == "end_turn":
+            return "completed"
+        elif finish_reason == "max_tokens":
+            return "max_tokens"
+        elif finish_reason == "tool_use":
+            return "tool_calls"
+        else:
+            return "unknown"
 
 
 class AnthropicChatResponseChunkAdapter(ChatResponse):
     def __init__(self, response):
         super().__init__(
             id=None,
-            object=None,
-            model=None,
+            message=ChatMessage(content=response.delta.text) if getattr(response.delta, "text", None) else None,
             usage=ChatUsage(output_tokens=response.usage.output_tokens) if getattr(response, "usage", None) else None,
-            choices=[
-                ChatChoice(
-                    index=0,
-                    message=ChatMessage(content=response.delta.text)
-                    if getattr(response.delta, "text", None)
-                    else None,
-                    tool_calls=None,
-                    finish_reason=response.delta.stop_reason if getattr(response.delta, "stop_reason", None) else None,
-                )
-            ],
+            tool_calls=None,
+            finish_reason=AnthropicChatResponseAdapter.adapt_finish_reason(response.delta.stop_reason)
+            if getattr(response.delta, "stop_reason", None)
+            else None,
         )

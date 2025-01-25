@@ -63,7 +63,7 @@ class Classifier:
 
     def _classify_single(self, data: Union[str, Image]) -> str:
         messages = self._create_messages(data)
-        response = self.client.chat(messages=messages, max_tokens=4096, response_format=self.ClassificationResult)
+        response = self.client.chat(messages=messages, response_format=self.ClassificationResult)
         return self._parse_response(response)
 
     def _create_messages(self, data: Union[str, Image]) -> List[dict]:
@@ -86,6 +86,6 @@ class Classifier:
 
     def _parse_response(self, response: dict) -> str:
         try:
-            return json.loads(response.choices[0].message.content)["class_name"]
+            return json.loads(response.message.content)["class_name"]
         except (KeyError, IndexError, json.JSONDecodeError) as e:
             raise ValueError("Invalid response format") from e

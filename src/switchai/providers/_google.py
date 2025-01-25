@@ -7,7 +7,6 @@ from pydantic import BaseModel
 
 from ..base_client import BaseClient
 from ..types import (
-    ChatChoice,
     ChatResponse,
     ChatUsage,
     ChatMessage,
@@ -38,10 +37,9 @@ class GoogleClientAdapter(BaseClient):
 
     def chat(
         self,
-        messages: List[str | ChatChoice | dict],
+        messages: List[str | dict | ChatResponse],
         temperature: Optional[float] = 1.0,
         max_tokens: Optional[int] = None,
-        n: Optional[int] = 1,
         tools: Optional[List] = None,
         response_format: Optional[Type[BaseModel]] = None,
         stream: Optional[bool] = False,
@@ -52,7 +50,6 @@ class GoogleClientAdapter(BaseClient):
             self.client = genai.GenerativeModel(self.model_name, system_instruction=adapted_inputs.system_prompt)
 
         generation_config = genai.types.GenerationConfig(
-            candidate_count=n,
             max_output_tokens=max_tokens,
             temperature=temperature,
         )
@@ -107,8 +104,8 @@ class GoogleChatInputsAdapter:
         self.response_format = self._adapt_response_format(response_format)
 
     def _adapt_message(self, message):
-        if isinstance(message, ChatChoice):
-            return self._adapt_chat_choice(message)
+        if isinstance(message, ChatResponse):
+            return self._adapt_chat_response(message)
         if message["role"] == "tool":
             return self._adapt_tool_message(message)
         if message["role"] == "user":
@@ -116,20 +113,20 @@ class GoogleChatInputsAdapter:
 
         return {"role": message["role"], "parts": message["content"]}
 
-    def _adapt_chat_choice(self, chat_choice):
-        if chat_choice.tool_calls:
+    def _adapt_chat_response(self, chat_response):
+        if chat_response.tool_calls:
             return {
-                "role": chat_choice.message.role,
+                "role": chat_response.message.role,
                 "parts": [
                     {
                         "function_call": {
-                            "name": chat_choice.tool_calls[0].function.name,
-                            "args": chat_choice.tool_calls[0].function.arguments,
+                            "name": chat_response.tool_calls[0].function.name,
+                            "args": chat_response.tool_calls[0].function.arguments,
                         }
                     }
                 ],
             }
-        return {"role": chat_choice.message.role, "parts": chat_choice.message.content}
+        return {"role": chat_response.message.role, "parts": chat_response.message.content}
 
     def _adapt_tool_message(self, message):
         return {
@@ -208,61 +205,67 @@ class GoogleChatInputsAdapter:
 
 class GoogleChatResponseAdapter(ChatResponse):
     def __init__(self, response):
+        choice = response.candidates[0]
+        tool_calls = [
+            ChatToolCall(
+                id=None,
+                function=Function(name=part.function_call.name, arguments=dict(part.function_call.args)),
+            )
+            for part in choice.content.parts
+            if "function_call" in part
+        ]
+        tool_calls = tool_calls if len(tool_calls) > 0 else None
+
         super().__init__(
             id=None,
-            object=None,
-            model=None,
+            message=ChatMessage(role="assistant", content=choice.content.parts[0].text),
+            tool_calls=tool_calls,
             usage=ChatUsage(
                 input_tokens=response.usage_metadata.prompt_token_count,
                 output_tokens=response.usage_metadata.candidates_token_count,
                 total_tokens=response.usage_metadata.total_token_count,
             ),
-            choices=[
-                ChatChoice(
-                    index=choice.index,
-                    message=ChatMessage(role="assistant", content=choice.content.parts[0].text),
-                    tool_calls=[
-                        ChatToolCall(
-                            id=None,
-                            function=Function(name=part.function_call.name, arguments=dict(part.function_call.args)),
-                        )
-                        for part in choice.content.parts
-                        if "function_call" in part
-                    ],
-                    finish_reason=choice.finish_reason.name.lower(),
-                )
-                for choice in response.candidates
-            ],
+            finish_reason=self.adapt_finish_reason(choice.finish_reason.name.lower(), tool_calls),
         )
+
+    @staticmethod
+    def adapt_finish_reason(finish_reason, tool_calls):
+        if finish_reason == "stop":
+            return "completed"
+        elif finish_reason == "max_tokens":
+            return "max_tokens"
+        elif finish_reason == "safety":
+            return "content_filter"
+
+        if tool_calls:
+            return "tool_calls"
+
+        return "unknown"
 
 
 class GoogleChatResponseChunkAdapter(ChatResponse):
     def __init__(self, response):
+        choice = response.candidates[0]
+        tool_calls = [
+            ChatToolCall(
+                id=None,
+                function=Function(name=part.function_call.name, arguments=dict(part.function_call.args)),
+            )
+            for part in choice.content.parts
+            if "function_call" in part
+        ]
+        tool_calls = tool_calls if len(tool_calls) > 0 else None
+
         super().__init__(
             id=None,
-            object=None,
-            model=None,
             usage=ChatUsage(
                 input_tokens=response.usage_metadata.prompt_token_count,
                 output_tokens=response.usage_metadata.candidates_token_count,
                 total_tokens=response.usage_metadata.total_token_count,
             ),
-            choices=[
-                ChatChoice(
-                    index=choice.index,
-                    message=ChatMessage(role="assistant", content=choice.content.parts[0].text),
-                    tool_calls=[
-                        ChatToolCall(
-                            id=None,
-                            function=Function(name=part.function_call.name, arguments=dict(part.function_call.args)),
-                        )
-                        for part in choice.content.parts
-                        if "function_call" in part
-                    ],
-                    finish_reason=choice.finish_reason.name.lower(),
-                )
-                for choice in response.candidates
-            ],
+            message=ChatMessage(role="assistant", content=choice.content.parts[0].text),
+            tool_calls=tool_calls,
+            finish_reason=GoogleChatResponseAdapter.adapt_finish_reason(choice.finish_reason.name.lower(), tool_calls),
         )
 
 

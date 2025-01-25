@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 from .. import SwitchAI
 from ..base_client import BaseClient
-from ..types import ChatResponse, ChatChoice
+from ..types import ChatResponse
 
 
 def fetch_website(url: str) -> str:
@@ -42,10 +42,9 @@ class Browser(BaseClient):
 
     def chat(
         self,
-        messages: List[str | ChatChoice | dict],
+        messages: List[str | dict | ChatResponse],
         temperature: Optional[float] = 1.0,
         max_tokens: Optional[int] = None,
-        n: Optional[int] = 1,
         tools: Optional[List] = None,
         response_format: Optional[Type[BaseModel]] = None,
         stream: Optional[bool] = False,
@@ -53,7 +52,7 @@ class Browser(BaseClient):
         if tools is None:
             tools = []
         if len(tools) > 0:
-            raise ValueError("The browser client does allow tools to be passed in the chat method.")
+            raise ValueError("Browser does not accept tools.")
 
         tools.append(
             {
@@ -71,11 +70,11 @@ class Browser(BaseClient):
             }
         )
 
-        first_response = self.client.chat(messages, temperature, max_tokens, n, tools)
+        first_response = self.client.chat(messages, temperature, max_tokens, tools)
 
-        tool_calls = first_response.choices[0].tool_calls
+        tool_calls = first_response.tool_calls
         if tool_calls:
-            messages.append(first_response.choices[0])
+            messages.append(first_response)
             for tool_call in tool_calls:
                 if tool_call.function.name == "get_website":
                     function_args = tool_call.function.arguments
@@ -89,6 +88,6 @@ class Browser(BaseClient):
                         }
                     )
 
-            return self.client.chat(messages, temperature, max_tokens, n)
+            return self.client.chat(messages, temperature, max_tokens)
 
         return first_response

@@ -123,7 +123,7 @@ class Illustrator:
         for _ in range(max_revision_steps):
             response = self.author.chat(messages=messages, response_format=Illustration)
 
-            json_data = json.loads(response.choices[0].message.content)
+            json_data = json.loads(response.message.content)
             svg = json_data["svg_code"]
 
             critic_messages = [
@@ -151,13 +151,13 @@ class Illustrator:
                 messages=critic_messages,
                 response_format=CriticResponse,
             )
-            critic_response = json.loads(critic_response.choices[0].message.content)
+            critic_response = json.loads(critic_response.message.content)
             critic_response = CriticResponse.model_validate(critic_response)
 
             if not critic_response.need_improvement:
                 break
 
-            messages.append({"role": "assistant", "content": response.choices[0].message.content})
+            messages.append({"role": "assistant", "content": response.message.content})
             messages.append({"role": "user", "content": critic_response.instructions})
 
             pbar.update(1)
@@ -168,4 +168,4 @@ class Illustrator:
         except IOError as e:
             raise RuntimeError(f"Failed to write to file: {output_path}") from e
 
-        return response.choices[0].message.content
+        return response.message.content

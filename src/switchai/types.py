@@ -45,23 +45,6 @@ class ChatToolCall(BaseModel):
     type: str = "function"
 
 
-class ChatChoice(BaseModel):
-    """
-    A chat choice.
-
-    Args:
-        index: The index of the choice.
-        message: The generated message.
-        finish_reason: The reason the generation finished.
-        tool_calls: A list of tool calls.
-    """
-
-    index: int
-    message: Optional[ChatMessage] = None
-    finish_reason: Optional[str] = None
-    tool_calls: Optional[List[ChatToolCall]] = None
-
-
 class ChatUsage(BaseModel):
     """
     Usage statistics for a chat response.
@@ -83,17 +66,17 @@ class ChatResponse(BaseModel):
 
     Args:
         id: A unique identifier of the response.
-        object: The object type.
-        model: The model used to generate the response.
+        message: The generated message.
+        tool_calls: A list of tool calls.
         usage: Usage statistics.
-        choices: A list of choices. Can be more than 1 if `n` is greater than 1.
+        finish_reason: The reason the generation finished. This will be ``completed`` if the generation was successful, ``max_tokens`` if the maximum token limit was reached,``content_filter`` if the content filter blocked the response,``tool_calls`` if the model called a tool, or ``unknown`` if the reason is unknown.
     """
 
     id: Optional[str] = None
-    object: Optional[str] = None
-    model: Optional[str] = None
+    message: Optional[ChatMessage] = None
+    tool_calls: Optional[List[ChatToolCall]] = None
     usage: Optional[ChatUsage] = None
-    choices: List[ChatChoice]
+    finish_reason: Optional[str] = None
 
 
 class Embedding(BaseModel):
