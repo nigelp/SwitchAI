@@ -1,27 +1,23 @@
 from setuptools import setup, find_packages
 
 
-deps = ["pydantic", "Pillow", "httpx", "numpy"]
+deps = [
+    "pydantic",
+    "Pillow",
+    "httpx",
+    "numpy",
+    "cairosvg"
+    
+    "openai",
+    "mistralai",
+    "anthropic",
+    "google-generativeai",
+    "deepgram-sdk",
+    "voyageai",
+    "replicate",
+]
 
 extras = {}
-
-extras["openai"] = ["openai"]
-extras["mistralai"] = ["mistralai"]
-extras["anthropic"] = ["anthropic"]
-extras["google-generativeai"] = ["google-generativeai"]
-extras["deepgram-sdk"] = ["deepgram-sdk"]
-extras["voyageai"] = ["voyageai"]
-extras["replicate"] = ["replicate"]
-
-extras["all"] = (
-    extras["openai"]
-    + extras["mistralai"]
-    + extras["anthropic"]
-    + extras["google-generativeai"]
-    + extras["deepgram-sdk"]
-    + extras["voyageai"]
-    + extras["replicate"]
-)
 
 setup(
     name="switchai",
