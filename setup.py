@@ -21,7 +21,7 @@ extras = {}
 
 setup(
     name="switchai",
-    version="0.4.0",
+    version="0.5.0",
     description="A unified library for interacting with various AI APIs through a standardized interface.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",

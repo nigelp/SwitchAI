@@ -2,6 +2,8 @@ httpx
 pydantic
 Pillow
 numpy
+cairosvg
+
 openai
 mistralai
 anthropic

@@ -6,25 +6,13 @@ multiple APIs simultaneously, all with a simple and consistent interface.
 
 ## Installation
 
-You can install just the base `switchai` package, or install a provider's package along with it.
+To install SwitchAI, simply use pip:
 
-- **Base Package**: This installs just the base `switchai` package without installing any provider's SDK.
+```bash
+pip install switchai
+```
 
-  ```bash
-  pip install switchai
-  ```
-
-- **OpenAI Provider**: This installs `switchai` along with OpenAI's library.
-
-  ```bash
-  pip install switchai[openai]
-  ```
-
-- **All Providers**: This installs `switchai` along with all provider-specific libraries.
-
-  ```bash
-  pip install switchai[all]
-  ```
+For more details, refer to the [installation guide](https://switchai.readthedocs.io/en/latest/installation.html).
 
 ## Getting Started
 
