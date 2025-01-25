@@ -6,7 +6,7 @@ deps = [
     "Pillow",
     "httpx",
     "numpy",
-    "cairosvg"
+    "cairosvg",
     
     "openai",
     "mistralai",
