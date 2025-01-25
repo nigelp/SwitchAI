@@ -3,21 +3,35 @@ import io
 import re
 from typing import Any, Union
 
+import PIL
 from PIL.Image import Image
 
 
 def encode_image(image_input: Union[str, bytes, Image]) -> str:
+    """
+    Encodes an image into a base64 string with PNG encoding.
+
+    Args:
+        image_input (Union[str, bytes, Image.Image]): The image to encode. Can be a file path (str),
+        raw image bytes (bytes), or a PIL Image object.
+
+    Returns:
+        str: Base64-encoded PNG image string.
+    """
     if isinstance(image_input, Image):
-        buffered = io.BytesIO()
-        image_input.save(buffered, format="JPEG")
-        image_bytes = buffered.getvalue()
-        return base64.b64encode(image_bytes).decode("utf-8")
+        image = image_input
+    elif isinstance(image_input, bytes):
+        image = PIL.Image.open(io.BytesIO(image_input))
+    elif isinstance(image_input, str):
+        with open(image_input, "rb") as image_file:
+            image = PIL.Image.open(image_file)
+    else:
+        raise TypeError("Unsupported input type. Must be str (file path), bytes, or PIL.Image.Image.")
 
-    if isinstance(image_input, bytes):
-        return base64.b64encode(image_input).decode("utf-8")
-
-    with open(image_input, "rb") as image_file:
-        return base64.b64encode(image_file.read()).decode("utf-8")
+    buffered = io.BytesIO()
+    image.save(buffered, format="PNG")
+    png_bytes = buffered.getvalue()
+    return base64.b64encode(png_bytes).decode("utf-8")
 
 
 def is_url(path: str) -> bool:
