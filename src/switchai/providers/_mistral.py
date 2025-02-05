@@ -17,19 +17,17 @@ from ..types import (
     EmbeddingUsage,
     Embedding,
 )
-from ..utils import encode_image, is_url, contains_image, inline_defs
+from ..utils import encode_image, is_url, inline_defs, Task
 
 SUPPORTED_MODELS = {
-    "chat": [
-        "mistral-large-latest",
-        "mistral-small-latest",
-        "pixtral-large-latest",
-        "pixtral-12b",
-        "open-mistral-7b",
-        "open-mixtral-8x7b",
-        "open-mixtral-8x22b",
-    ],
-    "embed": {"text": ["mistral-embed"]},
+    "mistral-large-latest": [Task.TEXT_GENERATION],
+    "mistral-small-latest": [Task.TEXT_GENERATION],
+    "pixtral-large-latest": [Task.TEXT_GENERATION, Task.IMAGE_TEXT_TO_TEXT],
+    "pixtral-12b": [Task.TEXT_GENERATION, Task.IMAGE_TEXT_TO_TEXT],
+    "open-mistral-7b": [Task.TEXT_GENERATION, Task],
+    "open-mixtral-8x7b": [Task.TEXT_GENERATION, Task],
+    "open-mixtral-8x22b": [Task.TEXT_GENERATION, Task],
+    "mistral-embed": [Task.TEXT_TO_EMBEDDING],
 }
 
 API_KEY_NAMING = "MISTRAL_API_KEY"
@@ -86,19 +84,12 @@ class MistralClientAdapter(BaseClient):
             yield MistralChatResponseChunkAdapter(chunk.data)
 
     def embed(self, inputs: Union[str, Image, List[Union[str, Image]]]) -> EmbeddingResponse:
-        if contains_image(inputs):
-            if (
-                "text_and_images" not in SUPPORTED_MODELS["embed"]
-                or self.model_name not in SUPPORTED_MODELS["embed"]["text_and_images"]
-            ):
-                raise ValueError(f"Model {self.model_name} does not support images.")
-
         response = self.client.embeddings.create(
             model=self.model_name,
             inputs=inputs,
         )
 
-        return MistralTextEmbeddingResponseAdapter(response)
+        return MistralEmbeddingResponseAdapter(response)
 
 
 class MistralChatInputsAdapter:
@@ -245,7 +236,7 @@ class MistralChatResponseChunkAdapter(ChatResponse):
         )
 
 
-class MistralTextEmbeddingResponseAdapter(EmbeddingResponse):
+class MistralEmbeddingResponseAdapter(EmbeddingResponse):
     def __init__(self, response):
         super().__init__(
             id=response.id,

@@ -7,6 +7,7 @@ import numpy as np
 from PIL import Image
 
 from .. import SwitchAI
+from ..utils import Task
 
 
 class ImageRetriever:
@@ -27,11 +28,8 @@ class ImageRetriever:
         embeddings_cache_path: Optional[str] = None,
         batch_size: Optional[int] = 32,
     ):
-        module = importlib.import_module(f"switchai.providers._{client.provider}")
-        supported_models = module.SUPPORTED_MODELS["embed"]["text_and_images"]
-
-        if client.model_name not in supported_models:
-            raise ValueError("The client must support text and image embedding.")
+        if Task.IMAGE_TEXT_TO_EMBEDDING not in client.supported_tasks:
+            raise ValueError("ImageRetriever requires a text and image embedding model.")
 
         self.client = client
 

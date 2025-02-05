@@ -4,20 +4,19 @@ from deepgram import DeepgramClient, PrerecordedOptions, FileSource
 
 from ..base_client import BaseClient
 from ..types import TranscriptionResponse
+from ..utils import Task
 
 
 SUPPORTED_MODELS = {
-    "transcribe": [
-        "nova-2",
-        "nova",
-        "enhanced",
-        "base",
-        "whisper-tiny",
-        "whisper-small",
-        "whisper-base",
-        "whisper-medium",
-        "whisper-large",
-    ]
+    "nova-2": [Task.AUDIO_TO_TEXT],
+    "nova": [Task.AUDIO_TO_TEXT],
+    "enhanced": [Task.AUDIO_TO_TEXT],
+    "base": [Task.AUDIO_TO_TEXT],
+    "whisper-tiny": [Task.AUDIO_TO_TEXT],
+    "whisper-small": [Task.AUDIO_TO_TEXT],
+    "whisper-base": [Task.AUDIO_TO_TEXT],
+    "whisper-medium": [Task.AUDIO_TO_TEXT],
+    "whisper-large": [Task.AUDIO_TO_TEXT],
 }
 
 API_KEY_NAMING = "DEEPGRAM_API_KEY"

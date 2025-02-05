@@ -21,13 +21,21 @@ from ..types import (
     TranscriptionResponse,
     ImageGenerationResponse,
 )
-from ..utils import is_url, encode_image, contains_image, inline_defs
+from ..utils import is_url, encode_image, inline_defs, Task
+
 
 SUPPORTED_MODELS = {
-    "chat": ["gpt-4o-mini", "gpt-4o", "o1-preview", "o1-mini", "gpt-4"],
-    "embed": {"text": ["text-embedding-ada-002", "text-embedding-3-small", "text-embedding-3-large"]},
-    "transcribe": ["whisper-1"],
-    "generate_image": ["dall-e-3", "dall-e-2"],
+    "gpt-4o": [Task.TEXT_GENERATION, Task.IMAGE_TEXT_TO_TEXT],
+    "gpt-4o-mini": [Task.TEXT_GENERATION, Task.IMAGE_TEXT_TO_TEXT],
+    "o1-preview": [Task.TEXT_GENERATION, Task.IMAGE_TEXT_TO_TEXT],
+    "o1-mini": [Task.TEXT_GENERATION, Task.IMAGE_TEXT_TO_TEXT],
+    "gpt-4": [Task.TEXT_GENERATION, Task.IMAGE_TEXT_TO_TEXT],
+    "text-embedding-ada-002": [Task.TEXT_TO_EMBEDDING],
+    "text-embedding-3-small": [Task.TEXT_TO_EMBEDDING],
+    "text-embedding-3-large": [Task.TEXT_TO_EMBEDDING],
+    "whisper-1": [Task.AUDIO_TO_TEXT],
+    "dall-e-3": [Task.TEXT_TO_IMAGE],
+    "dall-e-2": [Task.TEXT_TO_IMAGE],
 }
 
 API_KEY_NAMING = "OPENAI_API_KEY"
@@ -69,16 +77,9 @@ class OpenaiClientAdapter(BaseClient):
             yield OpenaiChatResponseChunkAdapter(chunk)
 
     def embed(self, inputs: Union[str, Image, List[Union[str, Image]]]) -> EmbeddingResponse:
-        if contains_image(inputs):
-            if (
-                "text_and_images" not in SUPPORTED_MODELS["embed"]
-                or self.model_name not in SUPPORTED_MODELS["embed"]["text_and_images"]
-            ):
-                raise ValueError(f"Model {self.model_name} does not support images.")
-
         response = self.client.embeddings.create(input=inputs, model=self.model_name)
 
-        return OpenaiTextEmbeddingResponseAdapter(response)
+        return OpenaiEmbeddingResponseAdapter(response)
 
     def transcribe(self, audio_path: str, language: Optional[str] = None) -> TranscriptionResponse:
         with open(audio_path, "rb") as audio_file:
@@ -234,7 +235,7 @@ class OpenaiChatResponseChunkAdapter(ChatResponse):
         )
 
 
-class OpenaiTextEmbeddingResponseAdapter(EmbeddingResponse):
+class OpenaiEmbeddingResponseAdapter(EmbeddingResponse):
     def __init__(self, response):
         super().__init__(
             id=None,

@@ -7,9 +7,14 @@ from anthropic import Anthropic, NOT_GIVEN, BaseModel
 
 from ..base_client import BaseClient
 from ..types import ChatResponse, ChatUsage, ChatMessage, ChatToolCall, Function
-from ..utils import is_url, encode_image, inline_defs
+from ..utils import is_url, encode_image, inline_defs, Task
 
-SUPPORTED_MODELS = {"chat": ["claude-3-5-sonnet-latest", "claude-3-5-haiku-latest", "claude-3-opus-latest"]}
+
+SUPPORTED_MODELS = {
+    "claude-3-5-sonnet-latest": [Task.TEXT_GENERATION, Task.IMAGE_TEXT_TO_TEXT],
+    "claude-3-5-haiku-latest": [Task.TEXT_GENERATION, Task.IMAGE_TEXT_TO_TEXT],
+    "claude-3-opus-latest": [Task.TEXT_GENERATION, Task.IMAGE_TEXT_TO_TEXT],
+}
 
 API_KEY_NAMING = "ANTHROPIC_API_KEY"
 

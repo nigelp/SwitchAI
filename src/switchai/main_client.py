@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from .base_client import BaseClient
 from .types import ChatResponse, TranscriptionResponse, ImageGenerationResponse, EmbeddingResponse
+from .utils import Task, contains_image
 
 
 class SwitchAI(BaseClient):
@@ -24,7 +25,7 @@ class SwitchAI(BaseClient):
         self.provider = provider.lower()
         self.model_name = model_name
 
-        self.client, self.model_category = self._get_provider_client(api_key)
+        self.client, self.supported_tasks = self._get_provider_client(api_key)
 
     def _get_provider_client(self, api_key: Optional[str]) -> tuple[BaseClient, str]:
         # Get all provider files matching the pattern _*.py
@@ -43,37 +44,19 @@ class SwitchAI(BaseClient):
         provider_module = importlib.import_module(f"switchai.providers._{self.provider}")
 
         model_supported = False
-        model_category = None
-        # Check if the model is supported by the specified provider and identify the category
-        for category, models_or_subcategories in provider_module.SUPPORTED_MODELS.items():
-            if isinstance(models_or_subcategories, dict):
-                # If subcategories are present, iterate through them
-                for subcategory, models in models_or_subcategories.items():
-                    if self.model_name in models:
-                        model_supported = True
-                        model_category = category
-                        break
-            else:
-                # If no subcategories, models_or_subcategories is the list of models
-                if self.model_name in models_or_subcategories:
-                    model_supported = True
-                    model_category = category
-                    break
-            if model_supported:
-                break
+        supported_tasks = None
+
+        # Check if the model is supported by the specified provider and get the supported tasks
+        if self.model_name in provider_module.SUPPORTED_MODELS:
+            model_supported = True
+            supported_tasks = provider_module.SUPPORTED_MODELS[self.model_name]
 
         if not model_supported:
             # Find alternative providers that support the model
             alternative_providers = [
                 provider
                 for provider in provider_modules
-                if any(
-                    self.model_name in models
-                    for models_or_dict in importlib.import_module(
-                        f"switchai.providers._{provider}"
-                    ).SUPPORTED_MODELS.values()
-                    for models in (models_or_dict if isinstance(models_or_dict, list) else models_or_dict.values())
-                )
+                if self.model_name in importlib.import_module(f"switchai.providers._{provider}").SUPPORTED_MODELS
             ]
 
             if alternative_providers:
@@ -98,7 +81,7 @@ class SwitchAI(BaseClient):
         client_class = getattr(provider_module, class_name)
 
         # Return an instance of the client class and the model category
-        return client_class(self.model_name, api_key), model_category
+        return client_class(self.model_name, api_key), supported_tasks
 
     def chat(
         self,
@@ -109,21 +92,36 @@ class SwitchAI(BaseClient):
         response_format: Optional[Type[BaseModel]] = None,
         stream: Optional[bool] = False,
     ) -> Union[ChatResponse, Generator[ChatResponse, None, None]]:
-        if self.model_category != "chat":
+        if Task.TEXT_GENERATION not in self.supported_tasks and Task.IMAGE_TEXT_TO_TEXT not in self.supported_tasks:
             raise ValueError(f"Model '{self.model_name}' is not a chat model.")
+
+        if contains_image(messages):
+            if Task.IMAGE_TEXT_TO_TEXT not in self.supported_tasks:
+                raise ValueError(
+                    f"Your request contains an image, but model '{self.model_name}' does not support have that 'vision' capability."
+                )
+
         return self.client.chat(messages, temperature, max_tokens, tools, response_format, stream)
 
     def embed(self, inputs: Union[str, Image, List[Union[str, Image]]]) -> EmbeddingResponse:
-        if self.model_category != "embed":
+        if (
+            Task.TEXT_TO_EMBEDDING not in self.supported_tasks
+            and Task.IMAGE_TEXT_TO_EMBEDDING not in self.supported_tasks
+        ):
             raise ValueError(f"Model '{self.model_name}' is not an embedding model.")
+
+        if contains_image(inputs):
+            if Task.IMAGE_TEXT_TO_EMBEDDING not in self.supported_tasks:
+                raise ValueError(f"Model {self.model_name} does not support image embeddings.")
+
         return self.client.embed(inputs)
 
     def transcribe(self, audio_path: str, language: Optional[str] = None) -> TranscriptionResponse:
-        if self.model_category != "transcribe":
+        if Task.AUDIO_TO_TEXT not in self.supported_tasks:
             raise ValueError(f"Model '{self.model_name}' is not a speech-to-text model.")
         return self.client.transcribe(audio_path, language)
 
     def generate_image(self, prompt: str, n: int = 1) -> ImageGenerationResponse:
-        if self.model_category != "generate_image":
+        if Task.TEXT_TO_IMAGE not in self.supported_tasks:
             raise ValueError(f"Model '{self.model_name}' is not an image generation model.")
         return self.client.generate_image(prompt, n)

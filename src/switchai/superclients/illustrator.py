@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from tqdm import tqdm
 
 from .. import SwitchAI
+from ..utils import Task
 
 
 def svg_to_pil(svg_data):
@@ -43,8 +44,8 @@ class Illustrator:
     """
 
     def __init__(self, client: SwitchAI):
-        if client.model_category != "chat":
-            raise ValueError("Illustrator requires a chat-based model.")
+        if Task.IMAGE_TEXT_TO_TEXT not in client.supported_tasks:
+            raise ValueError("Illustrator requires a chat model that has the 'vision' capability.")
 
         self.author = client
         self.critic = client

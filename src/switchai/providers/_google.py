@@ -16,11 +16,14 @@ from ..types import (
     EmbeddingUsage,
     Embedding,
 )
-from ..utils import is_url, encode_image, contains_image, inline_defs
+from ..utils import is_url, encode_image, inline_defs, Task
 
 SUPPORTED_MODELS = {
-    "chat": ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.5-flash-8b"],
-    "embed": {"text": ["models/text-embedding-004", "models/embedding-001"]},
+    "gemini-1.5-flash": [Task.TEXT_GENERATION, Task.IMAGE_TEXT_TO_TEXT],
+    "gemini-1.5-pro": [Task.TEXT_GENERATION, Task.IMAGE_TEXT_TO_TEXT],
+    "gemini-1.5-flash-8b": [Task.TEXT_GENERATION, Task.IMAGE_TEXT_TO_TEXT],
+    "models/text-embedding-004": [Task.TEXT_TO_EMBEDDING],
+    "models/embedding-001": [Task.TEXT_TO_EMBEDDING],
 }
 
 API_KEY_NAMING = "GEMINI_API_KEY"
@@ -74,13 +77,6 @@ class GoogleClientAdapter(BaseClient):
             yield GoogleChatResponseChunkAdapter(chunk)
 
     def embed(self, inputs: Union[str, Image, List[Union[str, Image]]]) -> EmbeddingResponse:
-        if contains_image(inputs):
-            if (
-                "text_and_images" not in SUPPORTED_MODELS["embed"]
-                or self.model_name not in SUPPORTED_MODELS["embed"]["text_and_images"]
-            ):
-                raise ValueError(f"Model {self.model_name} does not support images.")
-
         if isinstance(inputs, str):
             inputs = [inputs]
 
@@ -89,7 +85,7 @@ class GoogleClientAdapter(BaseClient):
             model=self.model_name,
         )
 
-        return GoogleTextEmbeddingResponseAdapter(response)
+        return GoogleEmbeddingResponseAdapter(response)
 
 
 class GoogleChatInputsAdapter:
@@ -269,7 +265,7 @@ class GoogleChatResponseChunkAdapter(ChatResponse):
         )
 
 
-class GoogleTextEmbeddingResponseAdapter(EmbeddingResponse):
+class GoogleEmbeddingResponseAdapter(EmbeddingResponse):
     def __init__(self, response):
         super().__init__(
             id=None,

@@ -6,6 +6,7 @@ from PIL.Image import Image
 from pydantic import BaseModel, Field
 
 from .. import SwitchAI
+from ..utils import Task
 
 
 class Classifier:
@@ -20,8 +21,12 @@ class Classifier:
     """
 
     def __init__(self, client: SwitchAI, classes: List[str], task_description: str = None, multi_label: bool = False):
-        if client.model_category != "chat":
+        if (
+            Task.TEXT_GENERATION not in client.supported_tasks
+            and Task.IMAGE_TEXT_TO_TEXT not in client.supported_tasks
+        ):
             raise ValueError("The classifier client only supports chat models.")
+
         self.client = client
         self.task_description = task_description
 

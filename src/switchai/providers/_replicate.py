@@ -4,13 +4,15 @@ from PIL import Image
 
 from ..base_client import BaseClient
 from ..types import ImageGenerationResponse, TranscriptionResponse
+from ..utils import Task
 
 from replicate.client import Client
 
 
 SUPPORTED_MODELS = {
-    "transcribe": ["openai/whisper"],
-    "generate_image": ["black-forest-labs/flux-schnell", "stability-ai/sdxl"],
+    "openai/whisper": [Task.AUDIO_TO_TEXT],
+    "black-forest-labs/flux-schnell": [Task.TEXT_TO_IMAGE],
+    "stability-ai/sdxl": [Task.TEXT_TO_IMAGE],
 }
 
 API_KEY_NAMING = "REPLICATE_API_TOKEN"

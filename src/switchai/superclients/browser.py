@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from .. import SwitchAI
 from ..base_client import BaseClient
 from ..types import ChatResponse
+from ..utils import Task
 
 
 def fetch_website(url: str) -> str:
@@ -35,7 +36,10 @@ class Browser(BaseClient):
     """
 
     def __init__(self, client: SwitchAI):
-        if client.model_category != "chat":
+        if (
+            Task.TEXT_GENERATION not in client.supported_tasks
+            and Task.IMAGE_TEXT_TO_TEXT not in client.supported_tasks
+        ):
             raise ValueError("Browser only accepts chat models.")
 
         self.client = client

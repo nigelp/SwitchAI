@@ -6,6 +6,20 @@ from typing import Any, Union
 import PIL
 from PIL.Image import Image
 
+from enum import Enum
+
+
+class Task(Enum):
+    TEXT_GENERATION = "text_generation"
+    IMAGE_TEXT_TO_TEXT = "image_text_to_text"
+
+    TEXT_TO_IMAGE = "text_to_image"
+
+    TEXT_TO_EMBEDDING = "text_embedding"
+    IMAGE_TEXT_TO_EMBEDDING = "image_text_embedding"
+
+    AUDIO_TO_TEXT = "audio_to_text"
+
 
 def encode_image(image_input: Union[str, bytes, Image]) -> str:
     """
@@ -40,9 +54,21 @@ def is_url(path: str) -> bool:
 
 
 def contains_image(inputs: Any) -> bool:
+    """
+    Determines if the input contains an image.
+
+    This function checks for the presence of an image within the given input, considering three scenarios:
+    1. The input is an image instance.
+    2. The input is a list, and one or more elements in the list contain an image.
+    3. The input is a dictionary, and one or more values in the dictionary contain an image (commonly for chat-based inputs).
+    """
     if isinstance(inputs, list):
-        return any(isinstance(item, Image) for item in inputs)
-    return isinstance(inputs, Image)
+        return any(contains_image(item) for item in inputs)
+    elif isinstance(inputs, dict):
+        return any(contains_image(value) for value in inputs.values())
+    elif isinstance(inputs, Image):
+        return True
+    return False
 
 
 def inline_defs(schema):
