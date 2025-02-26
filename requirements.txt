@@ -10,3 +10,4 @@ anthropic
 deepgram-sdk
 voyageai
 replicate
+ollama

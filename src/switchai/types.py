@@ -120,7 +120,7 @@ class EmbeddingResponse(BaseModel):
     id: Optional[str] = None
     object: Optional[str] = None
     model: Optional[str] = None
-    usage: EmbeddingUsage
+    usage: Optional[EmbeddingUsage] = None
     embeddings: List[Embedding]
 
 

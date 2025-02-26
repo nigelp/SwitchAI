@@ -69,12 +69,13 @@ class SwitchAI(BaseClient):
                 raise ValueError(f"Model '{self.model_name}' is not supported by any provider.")
 
         # Retrieve the API key from the environment if not provided
-        if api_key is None:
-            api_key = os.environ.get(provider_module.API_KEY_NAMING)
-        if api_key is None:
-            raise ValueError(
-                f"The api_key client option must be set either by passing api_key to the client or by setting the {provider_module.API_KEY_NAMING} environment variable."
-            )
+        if self.provider != "ollama":
+            if api_key is None:
+                api_key = os.environ.get(provider_module.API_KEY_NAMING)
+            if api_key is None:
+                raise ValueError(
+                    f"The api_key client option must be set either by passing api_key to the client or by setting the {provider_module.API_KEY_NAMING} environment variable."
+                )
 
         # Construct the client class name and get the class from the provider module
         class_name = f"{self.provider.capitalize()}ClientAdapter"
