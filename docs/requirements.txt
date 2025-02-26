@@ -3,6 +3,8 @@ furo
 sphinx-copybutton
 sphinxext.opengraph
 switchai
+sphinx-design
+myst-parser
 
 openai
 mistralai
