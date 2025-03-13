@@ -8,8 +8,6 @@ SUPPORTED_MODELS = {
     "grok-vision-beta": [Task.TEXT_GENERATION, Task.IMAGE_TEXT_TO_TEXT],
 }
 
-API_KEY_NAMING = "XAI_API_KEY"
-
 
 class XaiClientAdapter(OpenaiClientAdapter):
     def __init__(self, model_name: str, api_key: str):

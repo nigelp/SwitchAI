@@ -19,8 +19,6 @@ SUPPORTED_MODELS = {
     "whisper-large": [Task.AUDIO_TO_TEXT],
 }
 
-API_KEY_NAMING = "DEEPGRAM_API_KEY"
-
 
 class DeepgramClientAdapter(BaseClient):
     def __init__(self, model_name: str, api_key: str):

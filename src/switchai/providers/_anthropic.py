@@ -16,8 +16,6 @@ SUPPORTED_MODELS = {
     "claude-3-opus-latest": [Task.TEXT_GENERATION, Task.IMAGE_TEXT_TO_TEXT],
 }
 
-API_KEY_NAMING = "ANTHROPIC_API_KEY"
-
 
 class AnthropicClientAdapter(BaseClient):
     def __init__(self, model_name: str, api_key: str):

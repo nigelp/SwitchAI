@@ -38,8 +38,6 @@ SUPPORTED_MODELS = {
     "dall-e-2": [Task.TEXT_TO_IMAGE],
 }
 
-API_KEY_NAMING = "OPENAI_API_KEY"
-
 
 class OpenaiClientAdapter(BaseClient):
     def __init__(self, model_name: str, api_key: str):

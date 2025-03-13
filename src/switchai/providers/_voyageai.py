@@ -18,8 +18,6 @@ SUPPORTED_MODELS = {
     "voyage-multimodal-3": [Task.IMAGE_TEXT_TO_EMBEDDING],
 }
 
-API_KEY_NAMING = "VOYAGE_API_KEY"
-
 
 class VoyageaiClientAdapter(BaseClient):
     def __init__(self, model_name: str, api_key: str):

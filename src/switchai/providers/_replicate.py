@@ -15,8 +15,6 @@ SUPPORTED_MODELS = {
     "stability-ai/sdxl": [Task.TEXT_TO_IMAGE],
 }
 
-API_KEY_NAMING = "REPLICATE_API_TOKEN"
-
 
 class ReplicateClientAdapter(BaseClient):
     def __init__(self, model_name: str, api_key: str):

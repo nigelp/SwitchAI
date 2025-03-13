@@ -26,8 +26,6 @@ SUPPORTED_MODELS = {
     "models/embedding-001": [Task.TEXT_TO_EMBEDDING],
 }
 
-API_KEY_NAMING = "GEMINI_API_KEY"
-
 
 class GoogleClientAdapter(BaseClient):
     def __init__(self, model_name: str, api_key: str):

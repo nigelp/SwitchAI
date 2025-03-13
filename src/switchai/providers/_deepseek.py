@@ -8,8 +8,6 @@ SUPPORTED_MODELS = {
     "deepseek-reasoner": [Task.TEXT_GENERATION],
 }
 
-API_KEY_NAMING = "DEEPSEEK_API_KEY"
-
 
 class DeepseekClientAdapter(OpenaiClientAdapter):
     def __init__(self, model_name: str, api_key: str):

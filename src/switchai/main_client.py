@@ -70,11 +70,12 @@ class SwitchAI(BaseClient):
 
         # Retrieve the API key from the environment if not provided
         if self.provider != "ollama":
+            api_key_name = f"{self.provider.upper()}_API_KEY"
             if api_key is None:
-                api_key = os.environ.get(provider_module.API_KEY_NAMING)
+                api_key = os.environ.get(api_key_name)
             if api_key is None:
                 raise ValueError(
-                    f"The api_key client option must be set either by passing api_key to the client or by setting the {provider_module.API_KEY_NAMING} environment variable."
+                    f"The api_key client option must be set either by passing api_key to the client or by setting the {api_key_name} environment variable."
                 )
 
         # Construct the client class name and get the class from the provider module

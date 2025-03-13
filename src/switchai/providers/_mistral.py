@@ -30,8 +30,6 @@ SUPPORTED_MODELS = {
     "mistral-embed": [Task.TEXT_TO_EMBEDDING],
 }
 
-API_KEY_NAMING = "MISTRAL_API_KEY"
-
 
 class MistralClientAdapter(BaseClient):
     def __init__(self, model_name: str, api_key: str):
