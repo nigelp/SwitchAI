@@ -68,6 +68,14 @@ by Anthropic
 by Anthropic
 :::
 
+:::{grid-item-card} deepseek-chat
+by DeepSeek
+:::
+
+:::{grid-item-card} deepseek-reasoner
+by DeepSeek
+:::
+
 :::{grid-item-card} grok-beta
 by xAI
 :::
