@@ -21,24 +21,18 @@ You can pass your API key directly when initializing the SwitchAI client, as sho
 Setting the API Key as an Environment Variable
 ----------------------------------------------
 
-Alternatively, you can set your API key as an environment variable. This approach keeps your code cleaner and avoids exposing sensitive information in your scripts.
+For improved security and cleaner code, consider setting your API key as an environment variable. The environment variable name should follow this format:
 
-In your terminal or environment configuration, use the following command:
+.. code::
+
+    <PROVIDER>_API_KEY
+
+For example, if you’re using a Gemini model provided by Google, the variable name should be ``GOOGLE_API_KEY``.
+
+To set the environment variable, use the following command in your terminal or environment configuration file:
 
 .. code:: bash
 
-    export PROVIDER_API_KEY_NAMING="your_api_key"
+    export PROVIDER_API_KEY="your_api_key"
 
-Replace PROVIDER_API_KEY_NAMING with the following naming convention for the provider you are using:
-
-.. csv-table::
-   :widths: 5, 15
-
-    "**OpenAI**", OPENAI_API_KEY
-    "**Mistral**", MISTRAL_API_KEY
-    "**xAI**", XAI_API_KEY
-    "**Anthropic**", ANTHROPIC_API_KEY
-    "**Google**", GEMINI_API_KEY
-    "**Deepgram**", DEEPGRAM_API_KEY
-    "**VoyageAI**", VOYAGE_API_KEY
-    "**Replicate**", REPLICATE_API_TOKEN
+By using environment variables, you reduce the risk of accidentally exposing sensitive information in your codebase. This method is recommended for production environments.
